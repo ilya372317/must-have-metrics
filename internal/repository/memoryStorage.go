@@ -5,21 +5,21 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/errors"
 )
 
-type AlertInMemoryStorage struct {
+type InMemoryStorage struct {
 	Records map[string]entity.Alert
 }
 
-func MakeAlertInMemoryStorage() AlertInMemoryStorage {
-	return AlertInMemoryStorage{
+func MakeAlertInMemoryStorage() InMemoryStorage {
+	return InMemoryStorage{
 		Records: make(map[string]entity.Alert),
 	}
 }
 
-func (storage *AlertInMemoryStorage) SetAlert(name string, alert entity.Alert) {
+func (storage *InMemoryStorage) SetAlert(name string, alert entity.Alert) {
 	storage.Records[name] = alert
 }
 
-func (storage *AlertInMemoryStorage) UpdateAlert(name string, newValue entity.Alert) error {
+func (storage *InMemoryStorage) UpdateAlert(name string, newValue entity.Alert) error {
 	if !storage.HasAlert(name) {
 		return &errors.AlertNotFound{}
 	}
@@ -28,7 +28,7 @@ func (storage *AlertInMemoryStorage) UpdateAlert(name string, newValue entity.Al
 	return nil
 }
 
-func (storage *AlertInMemoryStorage) GetAlert(name string) (entity.Alert, error) {
+func (storage *InMemoryStorage) GetAlert(name string) (entity.Alert, error) {
 	alert, ok := storage.Records[name]
 	if !ok {
 		return entity.Alert{}, &errors.AlertNotFound{}
@@ -36,7 +36,7 @@ func (storage *AlertInMemoryStorage) GetAlert(name string) (entity.Alert, error)
 	return alert, nil
 }
 
-func (storage *AlertInMemoryStorage) HasAlert(name string) bool {
+func (storage *InMemoryStorage) HasAlert(name string) bool {
 	_, ok := storage.Records[name]
 	return ok
 }
