@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"github.com/ilya372317/must-have-metrics/internal/entity"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -9,6 +11,9 @@ const partsCountWithoutType = 1
 const partsCountWithoutName = 2
 const partsCountWithoutValue = 3
 const partsCountIsValid = 4
+
+const typePartPosition = 1
+const valuePartPosition = 3
 
 func ValidUpdate() Middleware {
 	return func(f http.HandlerFunc) http.HandlerFunc {
@@ -42,8 +47,30 @@ func checkUrl(path string) (error, int) {
 	case partsCountWithoutValue:
 		return &IncorrectPath{}, http.StatusBadRequest
 	case partsCountIsValid:
-		return nil, http.StatusOK
+		return validateParts(pathPartsWithoutEmpty)
 	default:
 		return &IncorrectPath{}, http.StatusBadRequest
 	}
+}
+
+func validateParts(pathParts []string) (error, int) {
+	if !typeIsValid(pathParts[typePartPosition]) {
+		return &IncorrectPath{}, http.StatusBadRequest
+	}
+
+	if !valueIsValid(pathParts[valuePartPosition]) {
+		return &IncorrectPath{}, http.StatusBadRequest
+	}
+
+	return nil, http.StatusOK
+}
+
+func valueIsValid(value string) bool {
+	_, intErr := strconv.Atoi(value)
+	_, floatErr := strconv.ParseFloat(value, 64)
+	return intErr == nil || floatErr == nil
+}
+
+func typeIsValid(typ string) bool {
+	return typ == entity.GaugeType || typ == entity.CounterType
 }
