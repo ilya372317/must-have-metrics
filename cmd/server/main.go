@@ -13,11 +13,11 @@ func main() {
 	}
 }
 
-func defaultHandler(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "page not found")
+func defaultHandler(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "incorrect route", http.StatusBadRequest)
 }
 
-func updateHandler(w http.ResponseWriter, r *http.Request) {
+func updateHandler(w http.ResponseWriter, _ *http.Request) {
 	io.WriteString(w, "url is work")
 }
 
