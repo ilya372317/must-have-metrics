@@ -2,7 +2,7 @@ package repository
 
 import (
 	"github.com/ilya372317/must-have-metrics/internal/entity"
-	"strconv"
+	"github.com/ilya372317/must-have-metrics/internal/errors"
 )
 
 type AlertInMemoryStorage struct {
@@ -15,40 +15,32 @@ func MakeAlertInMemoryStorage() AlertInMemoryStorage {
 	}
 }
 
-func (storage *AlertInMemoryStorage) AddAlert(typ, name, data string) error {
-	switch typ {
-	case entity.GaugeType:
-		floatData, err := strconv.ParseFloat(data, 64)
-		if err != nil {
-			return err
-		}
-		storage.addGaugeAlert(typ, name, floatData)
-		break
-	case entity.CounterType:
-		intData, err := strconv.ParseInt(data, 10, 64)
-		if err != nil {
-			return err
-		}
-		storage.addCounterAlert(typ, name, intData)
-		break
+func (storage *AlertInMemoryStorage) AddAlert(name string, alert entity.Alert) {
+	storage.Records[name] = alert
+}
+
+func (storage *AlertInMemoryStorage) UpdateAlert(name string, newValue entity.AlertValue) error {
+	if !storage.HasAlert(name) {
+		return &errors.AlertNotFound{}
 	}
+	currentAlert, err := storage.GetAlert(name)
+	if err != nil {
+		return err
+	}
+	currentAlert.Value = currentAlert.Value.Add(newValue)
 
 	return nil
 }
 
-func (storage *AlertInMemoryStorage) addGaugeAlert(typ, name string, data float64) {
-	storage.Records[name] = entity.MakeGaugeAlert(typ, name, data)
-}
-
-func (storage *AlertInMemoryStorage) addCounterAlert(typ, name string, data int64) {
-	if _, ok := storage.Records[name]; !ok {
-		storage.Records[name] = entity.MakeCounterAlert(typ, name, data)
-		return
+func (storage *AlertInMemoryStorage) GetAlert(name string) (entity.Alert, error) {
+	alert, ok := storage.Records[name]
+	if !ok {
+		return entity.Alert{}, &errors.AlertNotFound{}
 	}
-	alertValue := storage.Records[name].Value
-	storage.Records[name].Value.SetIntValue(alertValue.GetIntValue() + data)
+	return alert, nil
 }
 
-func (storage *AlertInMemoryStorage) GetAlert(name string) entity.Alert {
-	return entity.Alert{}
+func (storage *AlertInMemoryStorage) HasAlert(name string) bool {
+	_, ok := storage.Records[name]
+	return ok
 }

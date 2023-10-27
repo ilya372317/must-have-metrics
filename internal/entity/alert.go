@@ -14,10 +14,16 @@ type AlertValue interface {
 	SetIntValue(value int64)
 	GetFloatValue() float64
 	GetIntValue() int64
+	Add(newValue AlertValue) AlertValue
 }
 
 type AlertIntValue struct {
 	Data int64
+}
+
+func (alert *AlertIntValue) Add(newValue AlertValue) AlertValue {
+	alert.Data += newValue.GetIntValue()
+	return alert
 }
 
 func (alert *AlertIntValue) SetFloatValue(value float64) {
@@ -56,18 +62,23 @@ func (alert *AlertFloatValue) GetIntValue() int64 {
 	return int64(alert.Data)
 }
 
-func MakeGaugeAlert(typ, name string, data float64) Alert {
+func MakeGaugeAlert(name string, data float64) Alert {
 	return Alert{
-		Type:  typ,
+		Type:  GaugeType,
 		Name:  name,
 		Value: &AlertFloatValue{Data: data},
 	}
 }
 
-func MakeCounterAlert(typ, name string, data int64) Alert {
+func MakeCounterAlert(name string, data int64) Alert {
 	return Alert{
-		Type:  typ,
+		Type:  CounterType,
 		Name:  name,
 		Value: &AlertIntValue{Data: data},
 	}
+}
+
+func (alert *AlertFloatValue) Add(newValue AlertValue) AlertValue {
+	alert.Data += newValue.GetFloatValue()
+	return alert
 }
