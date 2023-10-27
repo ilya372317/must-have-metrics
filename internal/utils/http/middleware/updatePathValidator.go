@@ -20,7 +20,7 @@ func ValidUpdate() Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			urlPath := r.URL.Path
 
-			if err, statusCode := checkUrl(urlPath); err != nil {
+			if statusCode, err := checkURL(urlPath); err != nil {
 				http.Error(w, err.Error(), statusCode)
 				return
 			}
@@ -30,7 +30,7 @@ func ValidUpdate() Middleware {
 	}
 }
 
-func checkUrl(path string) (error, int) {
+func checkURL(path string) (int, error) {
 	pathParts := strings.Split(path, "/")
 	pathPartsWithoutEmpty := make([]string, 0, cap(pathParts))
 	for _, part := range pathParts {
@@ -41,28 +41,28 @@ func checkUrl(path string) (error, int) {
 
 	switch len(pathPartsWithoutEmpty) {
 	case partsCountWithoutType:
-		return &IncorrectPath{}, http.StatusBadRequest
+		return http.StatusBadRequest, &IncorrectPath{}
 	case partsCountWithoutName:
-		return &IncorrectPath{}, http.StatusNotFound
+		return http.StatusNotFound, &IncorrectPath{}
 	case partsCountWithoutValue:
-		return &IncorrectPath{}, http.StatusBadRequest
+		return http.StatusBadRequest, &IncorrectPath{}
 	case partsCountIsValid:
 		return validateParts(pathPartsWithoutEmpty)
 	default:
-		return &IncorrectPath{}, http.StatusBadRequest
+		return http.StatusBadRequest, &IncorrectPath{}
 	}
 }
 
-func validateParts(pathParts []string) (error, int) {
+func validateParts(pathParts []string) (int, error) {
 	if !typeIsValid(pathParts[typePartPosition]) {
-		return &IncorrectPath{}, http.StatusBadRequest
+		return http.StatusBadRequest, &IncorrectPath{}
 	}
 
 	if !valueIsValid(pathParts[valuePartPosition]) {
-		return &IncorrectPath{}, http.StatusBadRequest
+		return http.StatusBadRequest, &IncorrectPath{}
 	}
 
-	return nil, http.StatusOK
+	return http.StatusOK, nil
 }
 
 func valueIsValid(value string) bool {

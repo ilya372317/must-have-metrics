@@ -14,13 +14,11 @@ func AddAlert(repo repository.AlertStorage, dto dto.UpdateAlertDTO) error {
 		if err != nil {
 			return err
 		}
-		break
 	case entity.CounterType:
 		err := updateCounterAlert(dto, repo)
 		if err != nil {
 			return err
 		}
-		break
 	}
 
 	return nil
