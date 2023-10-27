@@ -10,20 +10,14 @@ import (
 func AddAlert(repo repository.AlertStorage, dto dto.UpdateAlertDTO) error {
 	switch dto.Type {
 	case entity.GaugeType:
-		floatData, err := strconv.ParseFloat(dto.Data, 64)
+		err := updateGaugeAlert(dto, repo)
 		if err != nil {
 			return err
 		}
-		alert := entity.MakeGaugeAlert(dto.Name, floatData)
-		repo.AddAlert(dto.Name, alert)
 		break
 	case entity.CounterType:
-		intData, err := strconv.ParseInt(dto.Data, 10, 64)
+		err := updateCounterAlert(dto, repo)
 		if err != nil {
-			return err
-		}
-		alert := entity.MakeCounterAlert(dto.Name, intData)
-		if err := updateCounterAlert(dto.Name, repo, alert); err != nil {
 			return err
 		}
 		break
@@ -32,12 +26,36 @@ func AddAlert(repo repository.AlertStorage, dto dto.UpdateAlertDTO) error {
 	return nil
 }
 
-func updateCounterAlert(name string, repo repository.AlertStorage, alert entity.Alert) error {
-	if !repo.HasAlert(name) {
-		repo.AddAlert(name, alert)
+func updateGaugeAlert(dto dto.UpdateAlertDTO, repo repository.AlertStorage) error {
+	floatData, err := strconv.ParseFloat(dto.Data, 64)
+	if err != nil {
+		return err
+	}
+	alert := entity.MakeGaugeAlert(dto.Name, floatData)
+	repo.AddAlert(dto.Name, alert)
+
+	return nil
+}
+
+func updateCounterAlert(dto dto.UpdateAlertDTO, repo repository.AlertStorage) error {
+	intData, err := strconv.ParseInt(dto.Data, 10, 64)
+	if err != nil {
+		return err
+	}
+	alert := entity.MakeCounterAlert(dto.Name, intData)
+	if !repo.HasAlert(dto.Name) {
+		repo.AddAlert(dto.Name, alert)
 		return nil
 	}
-	if err := repo.UpdateAlert(name, alert.Value); err != nil {
+	oldAlert, err := repo.GetAlert(dto.Name)
+	if err != nil {
+		return err
+	}
+
+	newValue := oldAlert.Value.Add(alert.Value)
+	alert.Value = newValue
+
+	if err := repo.UpdateAlert(dto.Name, alert); err != nil {
 		return err
 	}
 	return nil

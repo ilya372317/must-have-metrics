@@ -19,15 +19,11 @@ func (storage *AlertInMemoryStorage) AddAlert(name string, alert entity.Alert) {
 	storage.Records[name] = alert
 }
 
-func (storage *AlertInMemoryStorage) UpdateAlert(name string, newValue entity.AlertValue) error {
+func (storage *AlertInMemoryStorage) UpdateAlert(name string, newValue entity.Alert) error {
 	if !storage.HasAlert(name) {
 		return &errors.AlertNotFound{}
 	}
-	currentAlert, err := storage.GetAlert(name)
-	if err != nil {
-		return err
-	}
-	currentAlert.Value = currentAlert.Value.Add(newValue)
+	storage.Records[name] = newValue
 
 	return nil
 }
