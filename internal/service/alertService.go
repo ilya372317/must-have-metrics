@@ -32,7 +32,7 @@ func updateGaugeAlert(dto dto.UpdateAlertDTO, repo repository.AlertStorage) erro
 		return err
 	}
 	alert := entity.MakeGaugeAlert(dto.Name, floatData)
-	repo.AddAlert(dto.Name, alert)
+	repo.SetAlert(dto.Name, alert)
 
 	return nil
 }
@@ -44,7 +44,7 @@ func updateCounterAlert(dto dto.UpdateAlertDTO, repo repository.AlertStorage) er
 	}
 	alert := entity.MakeCounterAlert(dto.Name, intData)
 	if !repo.HasAlert(dto.Name) {
-		repo.AddAlert(dto.Name, alert)
+		repo.SetAlert(dto.Name, alert)
 		return nil
 	}
 	oldAlert, err := repo.GetAlert(dto.Name)

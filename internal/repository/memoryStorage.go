@@ -15,7 +15,7 @@ func MakeAlertInMemoryStorage() AlertInMemoryStorage {
 	}
 }
 
-func (storage *AlertInMemoryStorage) AddAlert(name string, alert entity.Alert) {
+func (storage *AlertInMemoryStorage) SetAlert(name string, alert entity.Alert) {
 	storage.Records[name] = alert
 }
 
