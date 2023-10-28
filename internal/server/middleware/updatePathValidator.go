@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/ilya372317/must-have-metrics/internal/entity"
+	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"net/http"
 	"strconv"
 	"strings"

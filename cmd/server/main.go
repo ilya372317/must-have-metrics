@@ -1,19 +1,18 @@
 package main
 
 import (
-	"github.com/ilya372317/must-have-metrics/internal/dto"
-	"github.com/ilya372317/must-have-metrics/internal/repository"
-	"github.com/ilya372317/must-have-metrics/internal/service"
-	"github.com/ilya372317/must-have-metrics/internal/utils/http/middleware"
+	"github.com/ilya372317/must-have-metrics/internal/handlers"
+	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
+	storage2 "github.com/ilya372317/must-have-metrics/internal/storage"
 	"log"
 	"net/http"
 )
 
-var repoPtr repository.AlertStorage
+var storage storage2.AlertStorage
 
 func init() {
-	repoValue := repository.MakeAlertInMemoryStorage()
-	repoPtr = &repoValue
+	storageValue := storage2.MakeAlertInMemoryStorage()
+	storage = &storageValue
 }
 
 func main() {
@@ -22,23 +21,16 @@ func main() {
 	}
 }
 
-func defaultHandler(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "incorrect route", http.StatusBadRequest)
-}
-
-func updateHandler(w http.ResponseWriter, r *http.Request) {
-	updateAlertDTO := dto.CreateAlertDTOFromRequest(r)
-	if err := service.AddAlert(repoPtr, updateAlertDTO); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-}
-
 func run() error {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", defaultHandler)
+	mux.HandleFunc("/", handlers.DefaultHandler())
 	mux.HandleFunc(
 		"/update/",
-		middleware.Chain(updateHandler, middleware.ValidUpdate(), middleware.Method(http.MethodPost)),
+		middleware.Chain(
+			handlers.UpdateHandler(storage),
+			middleware.ValidUpdate(),
+			middleware.Method(http.MethodPost),
+		),
 	)
 	return http.ListenAndServe(":8080", mux)
 }

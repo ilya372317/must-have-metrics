@@ -1,8 +1,8 @@
-package repository
+package storage
 
 import (
-	"github.com/ilya372317/must-have-metrics/internal/entity"
 	"github.com/ilya372317/must-have-metrics/internal/errors"
+	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
 type InMemoryStorage struct {

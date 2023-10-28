@@ -1,6 +1,8 @@
-package repository
+package storage
 
-import "github.com/ilya372317/must-have-metrics/internal/entity"
+import (
+	"github.com/ilya372317/must-have-metrics/internal/server/entity"
+)
 
 type AlertStorage interface {
 	SetAlert(name string, alert entity.Alert)
