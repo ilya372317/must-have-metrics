@@ -23,7 +23,7 @@ func (storage *InMemoryStorage) UpdateAlert(name string, newValue entity.Alert) 
 	if !storage.HasAlert(name) {
 		return &errors.AlertNotFound{}
 	}
-	storage.Records[name] = newValue
+	storage.SetAlert(name, newValue)
 
 	return nil
 }
