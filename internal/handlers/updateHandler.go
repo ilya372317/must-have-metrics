@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/ilya372317/must-have-metrics/internal/constant"
 	"github.com/ilya372317/must-have-metrics/internal/server/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
@@ -19,12 +20,12 @@ func UpdateHandler(storage storage.AlertStorage) http.HandlerFunc {
 
 func addAlert(repo storage.AlertStorage, dto dto.UpdateAlertDTO) error {
 	switch dto.Type {
-	case entity.GaugeType:
+	case constant.TypeGauge:
 		err := updateGaugeAlert(dto, repo)
 		if err != nil {
 			return err
 		}
-	case entity.CounterType:
+	case constant.TypeCounter:
 		err := updateCounterAlert(dto, repo)
 		if err != nil {
 			return err

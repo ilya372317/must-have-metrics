@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/ilya372317/must-have-metrics/internal/server/entity"
+	"github.com/ilya372317/must-have-metrics/internal/constant"
 	"net/http"
 	"strconv"
 	"strings"
@@ -72,5 +72,5 @@ func valueIsValid(value string) bool {
 }
 
 func typeIsValid(typ string) bool {
-	return typ == entity.GaugeType || typ == entity.CounterType
+	return typ == constant.TypeGauge || typ == constant.TypeCounter
 }

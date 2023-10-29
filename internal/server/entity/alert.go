@@ -1,7 +1,6 @@
 package entity
 
-const GaugeType = "gauge"
-const CounterType = "counter"
+import "github.com/ilya372317/must-have-metrics/internal/constant"
 
 type Alert struct {
 	Type  string
@@ -64,7 +63,7 @@ func (alert *AlertFloatValue) GetIntValue() int64 {
 
 func MakeGaugeAlert(name string, data float64) Alert {
 	return Alert{
-		Type:  GaugeType,
+		Type:  constant.TypeGauge,
 		Name:  name,
 		Value: &AlertFloatValue{Data: data},
 	}
@@ -72,7 +71,7 @@ func MakeGaugeAlert(name string, data float64) Alert {
 
 func MakeCounterAlert(name string, data int64) Alert {
 	return Alert{
-		Type:  CounterType,
+		Type:  constant.TypeCounter,
 		Name:  name,
 		Value: &AlertIntValue{Data: data},
 	}
