@@ -3,16 +3,15 @@ package main
 import (
 	"github.com/ilya372317/must-have-metrics/internal/handlers"
 	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
-	storage2 "github.com/ilya372317/must-have-metrics/internal/storage"
+	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"log"
 	"net/http"
 )
 
-var storage storage2.AlertStorage
+var repository storage.AlertStorage
 
 func init() {
-	storageValue := storage2.MakeAlertInMemoryStorage()
-	storage = &storageValue
+	repository = storage.MakeAlertInMemoryStorage()
 }
 
 func main() {
@@ -27,7 +26,7 @@ func run() error {
 	mux.HandleFunc(
 		"/update/",
 		middleware.Chain(
-			handlers.UpdateHandler(storage),
+			handlers.UpdateHandler(repository),
 			middleware.ValidUpdate(),
 			middleware.Method(http.MethodPost),
 		),

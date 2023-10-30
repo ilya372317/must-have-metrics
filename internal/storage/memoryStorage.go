@@ -9,8 +9,8 @@ type InMemoryStorage struct {
 	Records map[string]entity.Alert
 }
 
-func MakeAlertInMemoryStorage() InMemoryStorage {
-	return InMemoryStorage{
+func MakeAlertInMemoryStorage() *InMemoryStorage {
+	return &InMemoryStorage{
 		Records: make(map[string]entity.Alert),
 	}
 }
