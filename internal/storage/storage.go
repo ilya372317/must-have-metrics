@@ -5,7 +5,7 @@ import (
 )
 
 type AlertStorage interface {
-	SetAlert(name string, alert entity.Alert)
+	SaveAlert(name string, alert entity.Alert)
 	UpdateAlert(name string, alert entity.Alert) error
 	GetAlert(name string) (entity.Alert, error)
 	HasAlert(name string) bool

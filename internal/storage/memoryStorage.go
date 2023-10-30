@@ -15,7 +15,7 @@ func MakeAlertInMemoryStorage() InMemoryStorage {
 	}
 }
 
-func (storage *InMemoryStorage) SetAlert(name string, alert entity.Alert) {
+func (storage *InMemoryStorage) SaveAlert(name string, alert entity.Alert) {
 	storage.Records[name] = alert
 }
 
@@ -23,7 +23,7 @@ func (storage *InMemoryStorage) UpdateAlert(name string, newValue entity.Alert) 
 	if !storage.HasAlert(name) {
 		return &errors.AlertNotFound{}
 	}
-	storage.SetAlert(name, newValue)
+	storage.SaveAlert(name, newValue)
 
 	return nil
 }
