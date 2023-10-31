@@ -11,7 +11,7 @@ import (
 var repository storage.AlertStorage
 
 func init() {
-	repository = storage.MakeAlertInMemoryStorage()
+	repository = storage.MakeInMemoryStorage()
 }
 
 func main() {
