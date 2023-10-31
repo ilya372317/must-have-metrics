@@ -67,6 +67,7 @@ func TestValidUpdate(t *testing.T) {
 			handlerToTest.ServeHTTP(w, request)
 
 			res := w.Result()
+			defer res.Body.Close()
 			assert.Equal(t, tt.want.code, res.StatusCode)
 		})
 	}
