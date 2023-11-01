@@ -61,6 +61,11 @@ func updateCounterAlert(dto dto.UpdateAlertDTO, repo storage.AlertStorage) error
 		return err
 	}
 
+	if oldAlert.Type == constant.TypeGauge {
+		repo.SaveAlert(dto.Name, alert)
+		return nil
+	}
+
 	newValue := oldAlert.Value.(int64) + alert.Value.(int64)
 	alert.Value = newValue
 
