@@ -9,4 +9,5 @@ type AlertStorage interface {
 	UpdateAlert(name string, alert entity.Alert) error
 	GetAlert(name string) (entity.Alert, error)
 	HasAlert(name string) bool
+	AllAlert() []entity.Alert
 }

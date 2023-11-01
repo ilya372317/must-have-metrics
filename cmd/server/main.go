@@ -23,7 +23,7 @@ func main() {
 
 func run() error {
 	router := chi.NewRouter()
-	router.Get("/", handlers.DefaultHandler())
+	router.Get("/", handlers.IndexHandler(repository))
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
 		r.Use(
 			middleware.TypeValidator(),
@@ -31,6 +31,10 @@ func run() error {
 			middleware.ValueValidator(),
 		)
 		r.Post("/", handlers.UpdateHandler(repository))
+	})
+	router.Route("/value/{type}/{name}", func(r chi.Router) {
+		r.Use(middleware.TypeValidator(), middleware.NameValidator())
+		r.Get("/", handlers.ShowHandler(repository))
 	})
 	return http.ListenAndServe(":8080", router)
 }

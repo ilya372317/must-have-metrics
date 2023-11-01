@@ -12,6 +12,7 @@ func SendReport(requestURL string) {
 
 	if err != nil {
 		log.Printf("failed to save data on server: %v\n", err)
+		return
 	}
 	defer res.Body.Close()
 }

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Some awesome metrics</title>
+</head>
+<section>
+    <ul>
+        {{range $alert := .}}
+        <li>{{$alert.Name}}: {{$alert.Value}}</li>
+        {{end}}
+    </ul>
+</section>
+</html>

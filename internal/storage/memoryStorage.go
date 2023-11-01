@@ -40,3 +40,12 @@ func (storage *InMemoryStorage) HasAlert(name string) bool {
 	_, ok := storage.Records[name]
 	return ok
 }
+
+func (storage *InMemoryStorage) AllAlert() []entity.Alert {
+	values := make([]entity.Alert, 0, len(storage.Records))
+	for _, value := range storage.Records {
+		values = append(values, value)
+	}
+
+	return values
+}

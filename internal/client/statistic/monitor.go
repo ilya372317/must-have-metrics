@@ -14,7 +14,6 @@ const counterName = "PollCount"
 const randomValueName = "RandomValue"
 const minRandomValue = 1
 const maxRandomValue = 50
-const counterStep = 1
 
 type Monitor struct {
 	sync.Mutex
@@ -60,7 +59,7 @@ func (monitor *Monitor) CollectStat(pollInterval time.Duration) {
 		monitor.setGaugeValue("NumForcedGC", rtm.NumForcedGC)
 		monitor.setGaugeValue("GCCPUFraction", rtm.GCCPUFraction)
 		monitor.setCounterValue(randomValueName, utils.GetRandomValue(minRandomValue, maxRandomValue))
-		monitor.setCounterValue(counterName, counterStep)
+		monitor.updatePollCount()
 		monitor.Unlock()
 	}
 }
@@ -73,6 +72,7 @@ func (monitor *Monitor) ReportStat(reportInterval time.Duration, reportSender se
 			requestURL := createURLForReportStat(data.Type, statName, data.Value)
 			reportSender(requestURL)
 		}
+		monitor.resetPollCount()
 		monitor.Unlock()
 	}
 }
@@ -88,6 +88,25 @@ func (monitor *Monitor) setCounterValue(name string, value interface{}) {
 	monitor.Data[name] = MonitorValue{
 		Type:  constant.TypeCounter,
 		Value: value,
+	}
+}
+
+func (monitor *Monitor) updatePollCount() {
+	_, ok := monitor.Data[counterName]
+	if !ok {
+		monitor.Data[counterName] = MonitorValue{Type: constant.TypeCounter, Value: 1}
+		return
+	}
+	oldValue := monitor.Data[counterName].Value.(int)
+	monitor.Data[counterName] = MonitorValue{
+		Type:  constant.TypeCounter,
+		Value: oldValue + 1,
+	}
+}
+func (monitor *Monitor) resetPollCount() {
+	monitor.Data[counterName] = MonitorValue{
+		Type:  constant.TypeCounter,
+		Value: 0,
 	}
 }
 
