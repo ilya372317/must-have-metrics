@@ -12,6 +12,7 @@ func ValueValidator() Middleware {
 			value := chi.URLParam(r, "value")
 			if !valueIsValid(value) {
 				http.Error(w, "value is invalid", http.StatusBadRequest)
+				return
 			}
 
 			next.ServeHTTP(w, r)

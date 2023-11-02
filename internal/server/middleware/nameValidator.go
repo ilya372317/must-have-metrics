@@ -11,6 +11,7 @@ func NameValidator() Middleware {
 			name := chi.URLParam(request, "name")
 			if !nameIsValid(name) {
 				http.Error(writer, "given name is invalid", http.StatusNotFound)
+				return
 			}
 
 			next.ServeHTTP(writer, request)

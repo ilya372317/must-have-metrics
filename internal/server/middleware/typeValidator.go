@@ -12,6 +12,7 @@ func TypeValidator() Middleware {
 			typ := chi.URLParam(r, "type")
 			if !typeIsValid(typ) {
 				http.Error(w, "invalid type parameter", http.StatusBadRequest)
+				return
 			}
 			f.ServeHTTP(w, r)
 		})
