@@ -2,15 +2,14 @@ package router
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/ilya372317/must-have-metrics/internal/constant"
 	"github.com/ilya372317/must-have-metrics/internal/handlers"
 	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 )
 
-func AlertRouter(repository storage.AlertStorage) *chi.Mux {
+func AlertRouter(repository storage.AlertStorage, pathToFile string) *chi.Mux {
 	router := chi.NewRouter()
-	router.Get("/", handlers.IndexHandler(repository, constant.StaticFilePath))
+	router.Get("/", handlers.IndexHandler(repository, pathToFile))
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
 		r.Use(
 			middleware.TypeValidator(),

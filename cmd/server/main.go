@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/ilya372317/must-have-metrics/internal/constant"
 	"github.com/ilya372317/must-have-metrics/internal/router"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"log"
@@ -20,5 +21,5 @@ func main() {
 }
 
 func run() error {
-	return http.ListenAndServe(":8080", router.AlertRouter(repository))
+	return http.ListenAndServe(":8080", router.AlertRouter(repository, constant.StaticFilePath))
 }
