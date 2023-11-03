@@ -24,7 +24,7 @@ func TestIndexHandler(t *testing.T) {
 		{
 			name: "success test case",
 			want: want{
-				response: "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n    </ul>\n</section>\n</html>",
+				response: "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n    </ul>\n</section>\n</html>",
 				code:     http.StatusOK,
 			},
 			fields: map[string]entity.Alert{},
@@ -32,7 +32,7 @@ func TestIndexHandler(t *testing.T) {
 		{
 			name: "success test case with fields",
 			want: want{
-				response: "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n        <li>alert1: 100</li>\n        \n        <li>alert2: 2.33434</li>\n        \n    </ul>\n</section>\n</html>",
+				response: "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n        <li>alert1: 100</li>\n        \n        <li>alert2: 2.33434</li>\n        \n    </ul>\n</section>\n</html>",
 				code:     http.StatusOK,
 			},
 			fields: map[string]entity.Alert{

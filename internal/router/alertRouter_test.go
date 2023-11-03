@@ -34,7 +34,7 @@ func TestAlertRouter(t *testing.T) {
 				},
 			},
 			url:    "/",
-			want:   "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n        <li>alert: 1</li>\n        \n    </ul>\n</section>\n</html>",
+			want:   "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n        <li>alert: 1</li>\n        \n    </ul>\n</section>\n</html>",
 			status: http.StatusOK,
 			method: http.MethodGet,
 		},
