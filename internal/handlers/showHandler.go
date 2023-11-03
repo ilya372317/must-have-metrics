@@ -16,6 +16,6 @@ func ShowHandler(strg storage.AlertStorage) http.HandlerFunc {
 			return
 		}
 
-		fmt.Fprintf(w, "name: %s, type: %s, value: %v", alert.Name, alert.Type, alert.Value)
+		fmt.Fprintf(w, "%v", alert.Value)
 	}
 }

@@ -32,7 +32,7 @@ func TestShowHandler(t *testing.T) {
 		{
 			name: "success simple test",
 			want: want{
-				response: "name: alert, type: counter, value: 1",
+				response: "1",
 				code:     http.StatusOK,
 			},
 			fields: map[string]entity.Alert{

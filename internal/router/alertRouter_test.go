@@ -42,7 +42,7 @@ func TestAlertRouter(t *testing.T) {
 			name:   "show success case",
 			url:    "/value/counter/alert",
 			method: http.MethodGet,
-			want:   "name: alert, type: counter, value: 1",
+			want:   "1",
 			fields: map[string]entity.Alert{
 				"alert": {
 					Type:  "counter",
