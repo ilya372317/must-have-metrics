@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/constant"
 	"github.com/ilya372317/must-have-metrics/internal/router"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
@@ -16,7 +17,15 @@ var (
 
 func init() {
 	repository = storage.MakeInMemoryStorage()
-	host = flag.String("a", ":8080", "define server address")
+	cnfg := new(config.ServerConfig)
+	if err := cnfg.Init(); err != nil {
+		log.Fatalln(err.Error())
+	}
+	host = flag.String("a", "localhost:8080", "server address")
+
+	if cnfg.Host != "" {
+		host = &cnfg.Host
+	}
 }
 
 func main() {
