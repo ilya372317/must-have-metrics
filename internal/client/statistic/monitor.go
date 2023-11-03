@@ -64,12 +64,12 @@ func (monitor *Monitor) CollectStat(pollInterval time.Duration) {
 	}
 }
 
-func (monitor *Monitor) ReportStat(reportInterval time.Duration, reportSender sender.ReportSender) {
+func (monitor *Monitor) ReportStat(host string, reportInterval time.Duration, reportSender sender.ReportSender) {
 	ticker := time.NewTicker(reportInterval)
 	for range ticker.C {
 		monitor.Lock()
 		for statName, data := range monitor.Data {
-			requestURL := createURLForReportStat(data.Type, statName, data.Value)
+			requestURL := createURLForReportStat(host, data.Type, statName, data.Value)
 			reportSender(requestURL)
 		}
 		monitor.resetPollCount()
@@ -110,6 +110,6 @@ func (monitor *Monitor) resetPollCount() {
 	}
 }
 
-func createURLForReportStat(typ, name string, value interface{}) string {
-	return fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", typ, name, value)
+func createURLForReportStat(host, typ, name string, value interface{}) string {
+	return fmt.Sprintf("http://"+host+"/update/%s/%s/%v", typ, name, value)
 }
