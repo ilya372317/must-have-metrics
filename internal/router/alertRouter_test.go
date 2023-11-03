@@ -100,6 +100,7 @@ func TestAlertRouter(t *testing.T) {
 				strg.SaveAlert(name, alert)
 			}
 			resp, body := testRequest(t, ts, tt.method, tt.url)
+			defer resp.Body.Close()
 			assert.Equal(t, tt.status, resp.StatusCode)
 			assert.Equal(t, tt.want, body)
 		})
