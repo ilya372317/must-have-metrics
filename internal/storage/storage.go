@@ -5,7 +5,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-var alertNotFound = errors.New("alert not found")
+var errAlertNotFound = errors.New("alert not found")
 
 type Storage interface {
 	Save(name string, alert entity.Alert)
@@ -31,7 +31,7 @@ func (storage *InMemoryStorage) Save(name string, alert entity.Alert) {
 
 func (storage *InMemoryStorage) Update(name string, newValue entity.Alert) error {
 	if !storage.Has(name) {
-		return alertNotFound
+		return errAlertNotFound
 	}
 	storage.Save(name, newValue)
 
@@ -41,7 +41,7 @@ func (storage *InMemoryStorage) Update(name string, newValue entity.Alert) error
 func (storage *InMemoryStorage) Get(name string) (entity.Alert, error) {
 	alert, ok := storage.Records[name]
 	if !ok {
-		return entity.Alert{}, alertNotFound
+		return entity.Alert{}, errAlertNotFound
 	}
 	return alert, nil
 }
