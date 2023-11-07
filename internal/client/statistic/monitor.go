@@ -3,7 +3,7 @@ package statistic
 import (
 	"fmt"
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
-	"github.com/ilya372317/must-have-metrics/internal/constant"
+	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/utils"
 	"runtime"
 	"sync"
@@ -91,14 +91,14 @@ func (monitor *Monitor) reportStat(host string, reportSender sender.ReportSender
 
 func (monitor *Monitor) setGaugeValue(name string, value interface{}) {
 	monitor.Data[name] = MonitorValue{
-		Type:  constant.TypeGauge,
+		Type:  entity.TypeGauge,
 		Value: value,
 	}
 }
 
 func (monitor *Monitor) setCounterValue(name string, value interface{}) {
 	monitor.Data[name] = MonitorValue{
-		Type:  constant.TypeCounter,
+		Type:  entity.TypeCounter,
 		Value: value,
 	}
 }
@@ -106,18 +106,18 @@ func (monitor *Monitor) setCounterValue(name string, value interface{}) {
 func (monitor *Monitor) updatePollCount() {
 	_, ok := monitor.Data[counterName]
 	if !ok {
-		monitor.Data[counterName] = MonitorValue{Type: constant.TypeCounter, Value: 1}
+		monitor.Data[counterName] = MonitorValue{Type: entity.TypeCounter, Value: 1}
 		return
 	}
 	oldValue := monitor.Data[counterName].Value.(int)
 	monitor.Data[counterName] = MonitorValue{
-		Type:  constant.TypeCounter,
+		Type:  entity.TypeCounter,
 		Value: oldValue + 1,
 	}
 }
 func (monitor *Monitor) resetPollCount() {
 	monitor.Data[counterName] = MonitorValue{
-		Type:  constant.TypeCounter,
+		Type:  entity.TypeCounter,
 		Value: 0,
 	}
 }

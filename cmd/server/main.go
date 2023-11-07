@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"github.com/ilya372317/must-have-metrics/internal/config"
-	"github.com/ilya372317/must-have-metrics/internal/constant"
 	"github.com/ilya372317/must-have-metrics/internal/router"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"log"
@@ -11,6 +10,7 @@ import (
 )
 
 const defaultServerAddress = "localhost:8080"
+const staticFilePath = "static"
 
 var (
 	repository storage.Storage
@@ -38,5 +38,5 @@ func main() {
 }
 
 func run() error {
-	return http.ListenAndServe(*host, router.AlertRouter(repository, constant.StaticFilePath))
+	return http.ListenAndServe(*host, router.AlertRouter(repository, staticFilePath))
 }

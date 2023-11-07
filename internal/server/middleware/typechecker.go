@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/ilya372317/must-have-metrics/internal/constant"
+	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"net/http"
 )
 
@@ -20,5 +20,5 @@ func TypeValidator() Middleware {
 }
 
 func typeIsValid(typ string) bool {
-	return typ == constant.TypeGauge || typ == constant.TypeCounter
+	return typ == entity.TypeGauge || typ == entity.TypeCounter
 }
