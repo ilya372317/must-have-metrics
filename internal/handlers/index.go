@@ -8,9 +8,9 @@ import (
 	"sort"
 )
 
-func IndexHandler(strg storage.AlertStorage, staticFolderPath string) http.HandlerFunc {
+func IndexHandler(strg storage.Storage, staticFolderPath string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		allAlerts := strg.AllAlert()
+		allAlerts := strg.All()
 		sort.SliceStable(allAlerts, func(i, j int) bool {
 			return allAlerts[i].Name < allAlerts[j].Name
 		})

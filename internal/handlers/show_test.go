@@ -65,7 +65,7 @@ func TestShowHandler(t *testing.T) {
 
 			strg := storage.MakeInMemoryStorage()
 			for name, alert := range tt.fields {
-				strg.SaveAlert(name, alert)
+				strg.Save(name, alert)
 			}
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("type", tt.args.typ)

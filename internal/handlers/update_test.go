@@ -200,7 +200,7 @@ func TestUpdateHandler(t *testing.T) {
 			writer := httptest.NewRecorder()
 			repo := storage.MakeInMemoryStorage()
 			for name, alert := range tt.fields {
-				repo.SaveAlert(name, alert)
+				repo.Save(name, alert)
 			}
 
 			handler := UpdateHandler(repo)
@@ -213,7 +213,7 @@ func TestUpdateHandler(t *testing.T) {
 				return
 			}
 
-			addedAlert, err := repo.GetAlert(tt.query.name)
+			addedAlert, err := repo.Get(tt.query.name)
 			assert.NoError(t, err)
 
 			assert.Equal(t, addedAlert, tt.want.alert)
@@ -223,7 +223,7 @@ func TestUpdateHandler(t *testing.T) {
 
 func Test_addAlert(t *testing.T) {
 	type args struct {
-		repo storage.AlertStorage
+		repo storage.Storage
 		dto  dto.UpdateAlertDTO
 	}
 	tests := []struct {
@@ -349,7 +349,7 @@ func Test_addAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				tt.args.repo.SaveAlert(name, alert)
+				tt.args.repo.Save(name, alert)
 			}
 
 			err := addAlert(tt.args.repo, tt.args.dto)
@@ -360,7 +360,7 @@ func Test_addAlert(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			addedAlert, addAlertErr := tt.args.repo.GetAlert(tt.args.dto.Name)
+			addedAlert, addAlertErr := tt.args.repo.Get(tt.args.dto.Name)
 			require.NoError(t, addAlertErr)
 			assert.Equal(t, addedAlert, tt.want)
 		})
@@ -370,7 +370,7 @@ func Test_addAlert(t *testing.T) {
 func Test_updateCounterAlert(t *testing.T) {
 	type args struct {
 		dto  dto.UpdateAlertDTO
-		repo storage.AlertStorage
+		repo storage.Storage
 	}
 	tests := []struct {
 		name    string
@@ -439,7 +439,7 @@ func Test_updateCounterAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				tt.args.repo.SaveAlert(name, alert)
+				tt.args.repo.Save(name, alert)
 			}
 
 			err := updateCounterAlert(tt.args.dto, tt.args.repo)
@@ -449,7 +449,7 @@ func Test_updateCounterAlert(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			updatedAlert, getAlertErr := tt.args.repo.GetAlert(tt.args.dto.Name)
+			updatedAlert, getAlertErr := tt.args.repo.Get(tt.args.dto.Name)
 			require.NoError(t, getAlertErr)
 			assert.Equal(t, updatedAlert, tt.want)
 		})
@@ -459,7 +459,7 @@ func Test_updateCounterAlert(t *testing.T) {
 func Test_updateGaugeAlert(t *testing.T) {
 	type args struct {
 		dto        dto.UpdateAlertDTO
-		repository storage.AlertStorage
+		repository storage.Storage
 	}
 	tests := []struct {
 		name    string
@@ -524,7 +524,7 @@ func Test_updateGaugeAlert(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			expectedAlert, getAlertError := tt.args.repository.GetAlert(tt.args.dto.Name)
+			expectedAlert, getAlertError := tt.args.repository.Get(tt.args.dto.Name)
 			require.NoError(t, getAlertError)
 			assert.Equal(t, tt.want, expectedAlert)
 		})

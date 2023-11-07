@@ -30,7 +30,7 @@ func TestMonitor_collectStat(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			monitor := MakeMonitor()
+			monitor := New()
 			rtm := runtime.MemStats{}
 			runtime.ReadMemStats(&rtm)
 			monitor.collectStat(&rtm)

@@ -7,10 +7,10 @@ import (
 	"net/http"
 )
 
-func ShowHandler(strg storage.AlertStorage) http.HandlerFunc {
+func ShowHandler(strg storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := chi.URLParam(r, "name")
-		alert, err := strg.GetAlert(name)
+		alert, err := strg.Get(name)
 		if err != nil {
 			http.Error(w, "alert not found", http.StatusNotFound)
 			return

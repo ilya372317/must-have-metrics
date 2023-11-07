@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func UpdateHandler(storage storage.AlertStorage) http.HandlerFunc {
+func UpdateHandler(storage storage.Storage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		updateAlertDTO := dto.CreateAlertDTOFromRequest(request)
 		if err := addAlert(storage, updateAlertDTO); err != nil {
@@ -18,7 +18,7 @@ func UpdateHandler(storage storage.AlertStorage) http.HandlerFunc {
 	}
 }
 
-func addAlert(repo storage.AlertStorage, dto dto.UpdateAlertDTO) error {
+func addAlert(repo storage.Storage, dto dto.UpdateAlertDTO) error {
 	switch dto.Type {
 	case constant.TypeGauge:
 		err := updateGaugeAlert(dto, repo)
@@ -35,41 +35,41 @@ func addAlert(repo storage.AlertStorage, dto dto.UpdateAlertDTO) error {
 	return nil
 }
 
-func updateGaugeAlert(dto dto.UpdateAlertDTO, repository storage.AlertStorage) error {
+func updateGaugeAlert(dto dto.UpdateAlertDTO, repository storage.Storage) error {
 	floatData, err := strconv.ParseFloat(dto.Data, 64)
 	if err != nil {
 		return err
 	}
 	alert := entity.MakeGaugeAlert(dto.Name, floatData)
-	repository.SaveAlert(dto.Name, alert)
+	repository.Save(dto.Name, alert)
 
 	return nil
 }
 
-func updateCounterAlert(dto dto.UpdateAlertDTO, repo storage.AlertStorage) error {
+func updateCounterAlert(dto dto.UpdateAlertDTO, repo storage.Storage) error {
 	intData, err := strconv.ParseInt(dto.Data, 10, 64)
 	if err != nil {
 		return err
 	}
 	alert := entity.MakeCounterAlert(dto.Name, intData)
-	if !repo.HasAlert(dto.Name) {
-		repo.SaveAlert(dto.Name, alert)
+	if !repo.Has(dto.Name) {
+		repo.Save(dto.Name, alert)
 		return nil
 	}
-	oldAlert, err := repo.GetAlert(dto.Name)
+	oldAlert, err := repo.Get(dto.Name)
 	if err != nil {
 		return err
 	}
 
 	if oldAlert.Type == constant.TypeGauge {
-		repo.SaveAlert(dto.Name, alert)
+		repo.Save(dto.Name, alert)
 		return nil
 	}
 
 	newValue := oldAlert.Value.(int64) + alert.Value.(int64)
 	alert.Value = newValue
 
-	if err := repo.UpdateAlert(dto.Name, alert); err != nil {
+	if err := repo.Update(dto.Name, alert); err != nil {
 		return err
 	}
 	return nil

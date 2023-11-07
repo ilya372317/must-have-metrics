@@ -20,7 +20,7 @@ type Monitor struct {
 	Data map[string]MonitorValue
 }
 
-func MakeMonitor() Monitor {
+func New() Monitor {
 	return Monitor{Data: make(map[string]MonitorValue)}
 }
 

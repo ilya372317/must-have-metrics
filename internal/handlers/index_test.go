@@ -53,7 +53,7 @@ func TestIndexHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			strg := storage.MakeInMemoryStorage()
 			for name, alert := range tt.fields {
-				strg.SaveAlert(name, alert)
+				strg.Save(name, alert)
 			}
 
 			request, err := http.NewRequest(http.MethodGet, "localhost:8080/", nil)

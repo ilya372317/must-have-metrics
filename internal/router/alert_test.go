@@ -97,7 +97,7 @@ func TestAlertRouter(t *testing.T) {
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				strg.SaveAlert(name, alert)
+				strg.Save(name, alert)
 			}
 			resp, body := testRequest(t, ts, tt.method, tt.url)
 			defer resp.Body.Close()

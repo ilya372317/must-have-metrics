@@ -10,8 +10,10 @@ import (
 	"net/http"
 )
 
+const defaultServerAddress = "localhost:8080"
+
 var (
-	repository storage.AlertStorage
+	repository storage.Storage
 	host       *string
 )
 
@@ -21,7 +23,7 @@ func init() {
 	if err := cnfg.Init(); err != nil {
 		log.Fatalln(err.Error())
 	}
-	host = flag.String("a", "localhost:8080", "server address")
+	host = flag.String("a", defaultServerAddress, "server address")
 
 	if cnfg.Host != "" {
 		host = &cnfg.Host
@@ -31,7 +33,7 @@ func init() {
 func main() {
 	flag.Parse()
 	if err := run(); err != nil {
-		log.Fatalf("vailed to start server on port 8080: %v", err)
+		log.Fatalf("failed to start server on address %s: %v", *host, err)
 	}
 }
 

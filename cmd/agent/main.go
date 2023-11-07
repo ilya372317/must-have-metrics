@@ -37,7 +37,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	monitor := statistic.MakeMonitor()
+	monitor := statistic.New()
 	go monitor.CollectStat(time.Duration(*pollInterval) * time.Second)
 	go monitor.ReportStat(*host, time.Duration(*reportInterval)*time.Second, sender.SendReport)
 	select {}

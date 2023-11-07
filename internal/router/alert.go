@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func AlertRouter(repository storage.AlertStorage, pathToFile string) *chi.Mux {
+func AlertRouter(repository storage.Storage, pathToFile string) *chi.Mux {
 	router := chi.NewRouter()
 	router.Get("/", handlers.IndexHandler(repository, pathToFile))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
