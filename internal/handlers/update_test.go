@@ -2,15 +2,16 @@ package handlers
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/server/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestUpdateHandler(t *testing.T) {
@@ -223,7 +224,7 @@ func TestUpdateHandler(t *testing.T) {
 
 func Test_addAlert(t *testing.T) {
 	type args struct {
-		repo storage.Storage
+		repo *storage.InMemoryStorage
 		dto  dto.UpdateAlertDTO
 	}
 	tests := []struct {
@@ -370,7 +371,7 @@ func Test_addAlert(t *testing.T) {
 func Test_updateCounterAlert(t *testing.T) {
 	type args struct {
 		dto  dto.UpdateAlertDTO
-		repo storage.Storage
+		repo *storage.InMemoryStorage
 	}
 	tests := []struct {
 		name    string
@@ -459,7 +460,7 @@ func Test_updateCounterAlert(t *testing.T) {
 func Test_updateGaugeAlert(t *testing.T) {
 	type args struct {
 		dto        dto.UpdateAlertDTO
-		repository storage.Storage
+		repository *storage.InMemoryStorage
 	}
 	tests := []struct {
 		name    string

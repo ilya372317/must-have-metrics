@@ -2,18 +2,11 @@ package storage
 
 import (
 	"errors"
+
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
 var errAlertNotFound = errors.New("alert not found")
-
-type Storage interface {
-	Save(name string, alert entity.Alert)
-	Update(name string, alert entity.Alert) error
-	Get(name string) (entity.Alert, error)
-	Has(name string) bool
-	All() []entity.Alert
-}
 
 type InMemoryStorage struct {
 	Records map[string]entity.Alert

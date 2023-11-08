@@ -2,18 +2,19 @@ package main
 
 import (
 	"flag"
+	"log"
+	"net/http"
+
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/router"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
-	"log"
-	"net/http"
 )
 
 const defaultServerAddress = "localhost:8080"
 const staticFilePath = "static"
 
 var (
-	repository storage.Storage
+	repository *storage.InMemoryStorage
 	host       *string
 )
 
