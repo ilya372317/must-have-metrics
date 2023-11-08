@@ -2,12 +2,13 @@ package statistic
 
 import (
 	"fmt"
-	"github.com/ilya372317/must-have-metrics/internal/client/sender"
-	"github.com/ilya372317/must-have-metrics/internal/server/entity"
-	"github.com/ilya372317/must-have-metrics/internal/utils"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/ilya372317/must-have-metrics/internal/client/sender"
+	"github.com/ilya372317/must-have-metrics/internal/server/entity"
+	"github.com/ilya372317/must-have-metrics/internal/utils"
 )
 
 const counterName = "PollCount"

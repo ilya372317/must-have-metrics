@@ -1,11 +1,12 @@
 package storage
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"reflect"
-	"testing"
 )
 
 func TestInMemoryStorage_GetAlert(t *testing.T) {
