@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/ilya372317/must-have-metrics/internal/server/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
-	"net/http"
-	"strconv"
 )
 
 func UpdateHandler(storage storage.Storage) http.HandlerFunc {

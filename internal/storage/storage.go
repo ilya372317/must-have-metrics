@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 

@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
-	"net/http"
 )
 
 func ShowHandler(strg storage.Storage) http.HandlerFunc {

@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"html/template"
 	"net/http"
 	"sort"
+
+	"github.com/ilya372317/must-have-metrics/internal/storage"
 )
 
 func IndexHandler(strg storage.Storage, staticFolderPath string) http.HandlerFunc {

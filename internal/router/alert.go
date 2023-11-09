@@ -1,11 +1,12 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/handlers"
 	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
-	"net/http"
 )
 
 func AlertRouter(repository storage.Storage, pathToFile string) *chi.Mux {

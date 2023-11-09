@@ -2,15 +2,16 @@ package handlers
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/server/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestUpdateHandler(t *testing.T) {

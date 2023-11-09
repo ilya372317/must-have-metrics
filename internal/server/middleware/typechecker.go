@@ -1,9 +1,10 @@
 package middleware
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
-	"net/http"
 )
 
 func TypeValidator() Middleware {
