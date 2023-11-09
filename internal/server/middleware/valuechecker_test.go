@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -79,7 +80,11 @@ func TestValueValidator(t *testing.T) {
 			funcForHandle.ServeHTTP(writer, request)
 
 			res := writer.Result()
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					log.Println(err)
+				}
+			}()
 			responseBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)

@@ -2,6 +2,7 @@ package router
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -34,8 +35,10 @@ func TestAlertRouter(t *testing.T) {
 					Value: int64(1),
 				},
 			},
-			url:    "/",
-			want:   "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n        <li>alert: 1</li>\n        \n    </ul>\n</section>\n</html>",
+			url: "/",
+			want: "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n    " +
+				"<title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n       " +
+				" <li>alert: 1</li>\n        \n    </ul>\n</section>\n</html>",
 			status: http.StatusOK,
 			method: http.MethodGet,
 		},
@@ -101,7 +104,11 @@ func TestAlertRouter(t *testing.T) {
 				strg.Save(name, alert)
 			}
 			resp, body := testRequest(t, ts, tt.method, tt.url)
-			defer resp.Body.Close()
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					log.Println(err)
+				}
+			}()
 			assert.Equal(t, tt.status, resp.StatusCode)
 			assert.Equal(t, tt.want, body)
 		})
@@ -114,12 +121,17 @@ func testRequest(
 	method,
 	path string,
 ) (*http.Response, string) {
+	t.Helper()
 	req, err := http.NewRequest(method, ts.URL+path, nil)
 	require.NoError(t, err)
 
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)

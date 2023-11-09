@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/caarlos0/env"
 )
 
@@ -17,7 +19,7 @@ type AgentConfig struct {
 func (a *AgentConfig) Init() error {
 	err := env.Parse(a)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed parse agent parameter: %w", err)
 	}
 
 	return nil
@@ -26,7 +28,7 @@ func (a *AgentConfig) Init() error {
 func (s *ServerConfig) Init() error {
 	err := env.Parse(s)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed parse server parameters: %w", err)
 	}
 	return nil
 }

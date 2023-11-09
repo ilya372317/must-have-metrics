@@ -17,8 +17,8 @@ const minRandomValue = 1
 const maxRandomValue = 50
 
 type Monitor struct {
-	sync.Mutex
 	Data map[string]MonitorValue
+	sync.Mutex
 }
 
 func New() Monitor {
@@ -26,8 +26,8 @@ func New() Monitor {
 }
 
 type MonitorValue struct {
-	Type  string
 	Value interface{}
+	Type  string
 }
 
 func (monitor *Monitor) CollectStat(pollInterval time.Duration) {
@@ -110,7 +110,7 @@ func (monitor *Monitor) updatePollCount() {
 		monitor.Data[counterName] = MonitorValue{Type: entity.TypeCounter, Value: 1}
 		return
 	}
-	oldValue := monitor.Data[counterName].Value.(int)
+	oldValue, _ := monitor.Data[counterName].Value.(int)
 	monitor.Data[counterName] = MonitorValue{
 		Type:  entity.TypeCounter,
 		Value: oldValue + 1,

@@ -187,13 +187,12 @@ func TestUpdateHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("type", tt.query.typ)
 			rctx.URLParams.Add("name", tt.query.name)
 			rctx.URLParams.Add("value", tt.query.value)
 			request, err := http.NewRequest(
-				"POST",
+				http.MethodPost,
 				"http://localhost:8080/update/{type}/{name}/{value}",
 				nil,
 			)

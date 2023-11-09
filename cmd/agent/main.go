@@ -10,6 +10,9 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/config"
 )
 
+const defaultPollInterval = 2
+const defaultReportInterval = 10
+
 var (
 	host           *string
 	pollInterval   *int
@@ -22,8 +25,8 @@ func init() {
 		log.Fatalln(err.Error())
 	}
 	host = flag.String("a", "localhost:8080", "server address")
-	pollInterval = flag.Int("p", 2, "frequency of metrics collection")
-	reportInterval = flag.Int("r", 10, "frequency of send metrics on server")
+	pollInterval = flag.Int("p", defaultPollInterval, "frequency of metrics collection")
+	reportInterval = flag.Int("r", defaultReportInterval, "frequency of send metrics on server")
 
 	if cnfg.Host != "" {
 		host = &cnfg.Host

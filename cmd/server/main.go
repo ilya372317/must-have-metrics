@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -39,5 +40,9 @@ func main() {
 }
 
 func run() error {
-	return http.ListenAndServe(*host, router.AlertRouter(repository, staticFilePath))
+	err := http.ListenAndServe(*host, router.AlertRouter(repository, staticFilePath))
+	if err != nil {
+		return fmt.Errorf("failed to start server: %w", err)
+	}
+	return nil
 }

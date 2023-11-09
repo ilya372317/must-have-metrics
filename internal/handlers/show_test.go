@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -63,7 +64,6 @@ func TestShowHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			strg := storage.MakeInMemoryStorage()
 			for name, alert := range tt.fields {
 				strg.Save(name, alert)
@@ -79,7 +79,11 @@ func TestShowHandler(t *testing.T) {
 			handler.ServeHTTP(writer, request)
 
 			res := writer.Result()
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					log.Println(err)
+				}
+			}()
 			responseBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 

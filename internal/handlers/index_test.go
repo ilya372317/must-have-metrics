@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,16 +26,20 @@ func TestIndexHandler(t *testing.T) {
 		{
 			name: "success test case",
 			want: want{
-				response: "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n    </ul>\n</section>\n</html>",
-				code:     http.StatusOK,
+				response: "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n" +
+					"    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n    </ul>\n</section>\n</html>",
+				code: http.StatusOK,
 			},
 			fields: map[string]entity.Alert{},
 		},
 		{
 			name: "success test case with fields",
 			want: want{
-				response: "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n        <li>alert1: 100</li>\n        \n        <li>alert2: 2.33434</li>\n        \n    </ul>\n</section>\n</html>",
-				code:     http.StatusOK,
+				response: "<!DOCTYPE html>\n<html lang=\"ru\">\n<head>\n    <meta charset=\"UTF-8\">\n" +
+					"    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n " +
+					"       <li>alert1: 100</li>\n        \n        <li>alert2: 2.33434</li>\n " +
+					"       \n    </ul>\n</section>\n</html>",
+				code: http.StatusOK,
 			},
 			fields: map[string]entity.Alert{
 				"alert1": {
@@ -64,7 +69,11 @@ func TestIndexHandler(t *testing.T) {
 			handlerToTest.ServeHTTP(writer, request)
 
 			res := writer.Result()
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					log.Println(err)
+				}
+			}()
 			responseBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)

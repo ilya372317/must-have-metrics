@@ -6,9 +6,9 @@ const (
 )
 
 type Alert struct {
+	Value interface{}
 	Type  string
 	Name  string
-	Value interface{}
 }
 
 func MakeGaugeAlert(name string, data float64) Alert {

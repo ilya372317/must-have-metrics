@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -8,6 +9,10 @@ import (
 
 	"github.com/ilya372317/must-have-metrics/internal/server/dto"
 )
+
+const failedUpdateCounterPattern = "failed update counter alert: %w"
+const failedParseGaugeValuePattern = "failed parse gauge alert value: %w"
+const failedParseCounterValuePattern = "failed parse counter alert value: %w"
 
 type UpdateStorage interface {
 	Save(name string, alert entity.Alert)
@@ -30,12 +35,12 @@ func addAlert(repo UpdateStorage, dto dto.UpdateAlertDTO) error {
 	case entity.TypeGauge:
 		err := updateGaugeAlert(dto, repo)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed update gauge alert: %w", err)
 		}
 	case entity.TypeCounter:
 		err := updateCounterAlert(dto, repo)
 		if err != nil {
-			return err
+			return fmt.Errorf(failedUpdateCounterPattern, err)
 		}
 	}
 
@@ -45,7 +50,7 @@ func addAlert(repo UpdateStorage, dto dto.UpdateAlertDTO) error {
 func updateGaugeAlert(dto dto.UpdateAlertDTO, repository UpdateStorage) error {
 	floatData, err := strconv.ParseFloat(dto.Data, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf(failedParseGaugeValuePattern, err)
 	}
 	alert := entity.MakeGaugeAlert(dto.Name, floatData)
 	repository.Save(dto.Name, alert)
@@ -56,7 +61,7 @@ func updateGaugeAlert(dto dto.UpdateAlertDTO, repository UpdateStorage) error {
 func updateCounterAlert(dto dto.UpdateAlertDTO, repo UpdateStorage) error {
 	intData, err := strconv.ParseInt(dto.Data, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf(failedParseCounterValuePattern, err)
 	}
 	alert := entity.MakeCounterAlert(dto.Name, intData)
 	if !repo.Has(dto.Name) {
@@ -65,7 +70,7 @@ func updateCounterAlert(dto dto.UpdateAlertDTO, repo UpdateStorage) error {
 	}
 	oldAlert, err := repo.Get(dto.Name)
 	if err != nil {
-		return err
+		return fmt.Errorf("counter alert for update not found: %w", err)
 	}
 
 	if oldAlert.Type == entity.TypeGauge {
@@ -77,7 +82,7 @@ func updateCounterAlert(dto dto.UpdateAlertDTO, repo UpdateStorage) error {
 	alert.Value = newValue
 
 	if err := repo.Update(dto.Name, alert); err != nil {
-		return err
+		return fmt.Errorf(failedUpdateCounterPattern, err)
 	}
 	return nil
 }
