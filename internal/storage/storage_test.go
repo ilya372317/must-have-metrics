@@ -51,7 +51,7 @@ func TestInMemoryStorage_GetAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := &InMemoryStorage{
-				Records: tt.fields.Records,
+				records: tt.fields.Records,
 			}
 			got, err := storage.Get(tt.args.name)
 			if (err != nil) != tt.wantErr {
@@ -100,7 +100,7 @@ func TestInMemoryStorage_HasAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := &InMemoryStorage{
-				Records: tt.fields.Records,
+				records: tt.fields.Records,
 			}
 			if got := storage.Has(tt.args.name); got != tt.want {
 				t.Errorf("Has() = %v, want %v", got, tt.want)
@@ -134,7 +134,7 @@ func TestInMemoryStorage_SaveAlert(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := MakeInMemoryStorage()
 			storage.Save(tt.args.name, tt.args.alert)
-			value, hasRecord := storage.Records[tt.args.name]
+			value, hasRecord := storage.records[tt.args.name]
 			assert.Equal(t, tt.args.alert.Value, value.Value)
 			assert.True(t, hasRecord)
 		})
@@ -204,14 +204,14 @@ func TestInMemoryStorage_UpdateAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := MakeInMemoryStorage()
-			storage.Records = tt.fields.Records
+			storage.records = tt.fields.Records
 			err := storage.Update(tt.args.name, tt.args.newValue)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equal(t, storage.Records[tt.args.name], tt.want)
+			assert.Equal(t, storage.records[tt.args.name], tt.want)
 		})
 	}
 }
