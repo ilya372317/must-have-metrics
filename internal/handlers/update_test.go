@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -207,7 +208,11 @@ func TestUpdateHandler(t *testing.T) {
 			handler := UpdateHandler(repo)
 			handler(writer, request)
 			res := writer.Result()
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					log.Println(err)
+				}
+			}()
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			if res.StatusCode >= 400 {
@@ -224,7 +229,7 @@ func TestUpdateHandler(t *testing.T) {
 
 func Test_addAlert(t *testing.T) {
 	type args struct {
-		repo storage.Storage
+		repo *storage.InMemoryStorage
 		dto  dto.UpdateAlertDTO
 	}
 	tests := []struct {
@@ -371,7 +376,7 @@ func Test_addAlert(t *testing.T) {
 func Test_updateCounterAlert(t *testing.T) {
 	type args struct {
 		dto  dto.UpdateAlertDTO
-		repo storage.Storage
+		repo *storage.InMemoryStorage
 	}
 	tests := []struct {
 		name    string
@@ -460,7 +465,7 @@ func Test_updateCounterAlert(t *testing.T) {
 func Test_updateGaugeAlert(t *testing.T) {
 	type args struct {
 		dto        dto.UpdateAlertDTO
-		repository storage.Storage
+		repository *storage.InMemoryStorage
 	}
 	tests := []struct {
 		name    string

@@ -6,10 +6,14 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/ilya372317/must-have-metrics/internal/storage"
+	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-func IndexHandler(strg storage.Storage, staticFolderPath string) http.HandlerFunc {
+type IndexStorage interface {
+	All() []entity.Alert
+}
+
+func IndexHandler(strg IndexStorage, staticFolderPath string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		allAlerts := strg.All()
 		sort.SliceStable(allAlerts, func(i, j int) bool {

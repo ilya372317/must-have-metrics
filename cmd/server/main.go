@@ -14,7 +14,7 @@ const defaultServerAddress = "localhost:8080"
 const staticFilePath = "static"
 
 var (
-	repository storage.Storage
+	repository *storage.InMemoryStorage
 	host       *string
 )
 

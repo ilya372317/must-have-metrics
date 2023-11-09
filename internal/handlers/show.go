@@ -2,13 +2,18 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/ilya372317/must-have-metrics/internal/storage"
+	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-func ShowHandler(strg storage.Storage) http.HandlerFunc {
+type ShowStorage interface {
+	Get(name string) (entity.Alert, error)
+}
+
+func ShowHandler(strg ShowStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := chi.URLParam(r, "name")
 		alert, err := strg.Get(name)
@@ -17,6 +22,8 @@ func ShowHandler(strg storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		fmt.Fprintf(w, "%v", alert.Value)
+		if _, err := fmt.Fprintf(w, "%v", alert.Value); err != nil {
+			log.Println(err)
+		}
 	}
 }

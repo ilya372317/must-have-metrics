@@ -4,12 +4,19 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ilya372317/must-have-metrics/internal/server/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
-	"github.com/ilya372317/must-have-metrics/internal/storage"
+
+	"github.com/ilya372317/must-have-metrics/internal/server/dto"
 )
 
-func UpdateHandler(storage storage.Storage) http.HandlerFunc {
+type UpdateStorage interface {
+	Save(name string, alert entity.Alert)
+	Update(name string, alert entity.Alert) error
+	Get(name string) (entity.Alert, error)
+	Has(name string) bool
+}
+
+func UpdateHandler(storage UpdateStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		updateAlertDTO := dto.CreateAlertDTOFromRequest(request)
 		if err := addAlert(storage, updateAlertDTO); err != nil {
@@ -18,7 +25,7 @@ func UpdateHandler(storage storage.Storage) http.HandlerFunc {
 	}
 }
 
-func addAlert(repo storage.Storage, dto dto.UpdateAlertDTO) error {
+func addAlert(repo UpdateStorage, dto dto.UpdateAlertDTO) error {
 	switch dto.Type {
 	case entity.TypeGauge:
 		err := updateGaugeAlert(dto, repo)
@@ -35,7 +42,7 @@ func addAlert(repo storage.Storage, dto dto.UpdateAlertDTO) error {
 	return nil
 }
 
-func updateGaugeAlert(dto dto.UpdateAlertDTO, repository storage.Storage) error {
+func updateGaugeAlert(dto dto.UpdateAlertDTO, repository UpdateStorage) error {
 	floatData, err := strconv.ParseFloat(dto.Data, 64)
 	if err != nil {
 		return err
@@ -46,7 +53,7 @@ func updateGaugeAlert(dto dto.UpdateAlertDTO, repository storage.Storage) error 
 	return nil
 }
 
-func updateCounterAlert(dto dto.UpdateAlertDTO, repo storage.Storage) error {
+func updateCounterAlert(dto dto.UpdateAlertDTO, repo UpdateStorage) error {
 	intData, err := strconv.ParseInt(dto.Data, 10, 64)
 	if err != nil {
 		return err
