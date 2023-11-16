@@ -199,7 +199,7 @@ func TestUpdateHandler(t *testing.T) {
 			request = request.WithContext(context.WithValue(request.Context(), chi.RouteCtxKey, rctx))
 			require.NoError(t, err)
 			writer := httptest.NewRecorder()
-			repo := storage.MakeInMemoryStorage()
+			repo := storage.NewInMemoryStorage()
 			for name, alert := range tt.fields {
 				repo.Save(name, alert)
 			}
@@ -241,7 +241,7 @@ func Test_addAlert(t *testing.T) {
 		{
 			name: "success counter empty storage case",
 			args: args{
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 				dto: dto.UpdateAlertDTO{
 					Type: "counter",
 					Name: "alert",
@@ -259,7 +259,7 @@ func Test_addAlert(t *testing.T) {
 		{
 			name: "success counter not empty storage case",
 			args: args{
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 				dto: dto.UpdateAlertDTO{
 					Type: "counter",
 					Name: "alert",
@@ -283,7 +283,7 @@ func Test_addAlert(t *testing.T) {
 		{
 			name: "success gauge empty storage case",
 			args: args{
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 				dto: dto.UpdateAlertDTO{
 					Type: "gauge",
 					Name: "alert",
@@ -301,7 +301,7 @@ func Test_addAlert(t *testing.T) {
 		{
 			name: "success gauge not empty storage case",
 			args: args{
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 				dto: dto.UpdateAlertDTO{
 					Type: "gauge",
 					Name: "alert",
@@ -325,7 +325,7 @@ func Test_addAlert(t *testing.T) {
 		{
 			name: "negative gauge invalid value case",
 			args: args{
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 				dto: dto.UpdateAlertDTO{
 					Type: "gauge",
 					Name: "alert",
@@ -339,7 +339,7 @@ func Test_addAlert(t *testing.T) {
 		{
 			name: "negative counter invalid value case",
 			args: args{
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 				dto: dto.UpdateAlertDTO{
 					Type: "counter",
 					Name: "alert",
@@ -392,7 +392,7 @@ func Test_updateCounterAlert(t *testing.T) {
 					Name: "alert",
 					Data: "10",
 				},
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 			},
 			fields:  map[string]entity.Alert{},
 			wantErr: false,
@@ -410,7 +410,7 @@ func Test_updateCounterAlert(t *testing.T) {
 					Name: "alert",
 					Data: "10",
 				},
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 			},
 			fields: map[string]entity.Alert{
 				"alert": {
@@ -434,7 +434,7 @@ func Test_updateCounterAlert(t *testing.T) {
 					Name: "alert",
 					Data: "invalid data",
 				},
-				repo: storage.MakeInMemoryStorage(),
+				repo: storage.NewInMemoryStorage(),
 			},
 			fields:  map[string]entity.Alert{},
 			wantErr: true,
@@ -480,7 +480,7 @@ func Test_updateGaugeAlert(t *testing.T) {
 					Name: "alert",
 					Data: "1.12",
 				},
-				repository: storage.MakeInMemoryStorage(),
+				repository: storage.NewInMemoryStorage(),
 			},
 			wantErr: false,
 			want: entity.Alert{
@@ -497,7 +497,7 @@ func Test_updateGaugeAlert(t *testing.T) {
 					Name: "alert",
 					Data: "1",
 				},
-				repository: storage.MakeInMemoryStorage(),
+				repository: storage.NewInMemoryStorage(),
 			},
 			wantErr: false,
 			want: entity.Alert{
@@ -514,7 +514,7 @@ func Test_updateGaugeAlert(t *testing.T) {
 					Name: "alert",
 					Data: "invalid data",
 				},
-				repository: storage.MakeInMemoryStorage(),
+				repository: storage.NewInMemoryStorage(),
 			},
 			wantErr: true,
 			want:    entity.Alert{},

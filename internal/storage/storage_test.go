@@ -132,7 +132,7 @@ func TestInMemoryStorage_SaveAlert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			storage := MakeInMemoryStorage()
+			storage := NewInMemoryStorage()
 			storage.Save(tt.args.name, tt.args.alert)
 			value, hasRecord := storage.records[tt.args.name]
 			assert.Equal(t, tt.args.alert.Value, value.Value)
@@ -203,7 +203,7 @@ func TestInMemoryStorage_UpdateAlert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			storage := MakeInMemoryStorage()
+			storage := NewInMemoryStorage()
 			storage.records = tt.fields.Records
 			err := storage.Update(tt.args.name, tt.args.newValue)
 			if tt.wantErr {

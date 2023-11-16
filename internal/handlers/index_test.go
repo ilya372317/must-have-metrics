@@ -57,7 +57,7 @@ func TestIndexHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			strg := storage.MakeInMemoryStorage()
+			strg := storage.NewInMemoryStorage()
 			for name, alert := range tt.fields {
 				strg.Save(name, alert)
 			}

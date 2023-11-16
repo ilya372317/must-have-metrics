@@ -12,7 +12,7 @@ type InMemoryStorage struct {
 	records map[string]entity.Alert
 }
 
-func MakeInMemoryStorage() *InMemoryStorage {
+func NewInMemoryStorage() *InMemoryStorage {
 	return &InMemoryStorage{
 		records: make(map[string]entity.Alert),
 	}

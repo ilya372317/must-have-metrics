@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	repository = storage.MakeInMemoryStorage()
+	repository = storage.NewInMemoryStorage()
 	cnfg := new(config.ServerConfig)
 	if err := cnfg.Init(); err != nil {
 		log.Fatalln(err.Error())
