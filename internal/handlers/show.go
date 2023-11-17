@@ -15,7 +15,7 @@ type ShowStorage interface {
 
 func ShowHandler(strg ShowStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		showDTO := dto.ShowAlertDTOFromRequest(r)
+		showDTO := dto.CreateShowAlertDTOFromRequest(r)
 		if _, err := showDTO.Validate(); err != nil {
 			http.Error(w, fmt.Errorf("show parameters is invalid: %w", err).Error(), http.StatusBadRequest)
 		}

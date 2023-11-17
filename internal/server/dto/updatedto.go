@@ -14,7 +14,7 @@ type UpdateAlertDTO struct {
 	Data string `valid:"stringisnumber"`
 }
 
-func CreateAlertDTOFromRequest(request *http.Request) UpdateAlertDTO {
+func CreateUpdateAlertDTOFromRequest(request *http.Request) UpdateAlertDTO {
 	typ := chi.URLParam(request, "type")
 	name := chi.URLParam(request, "name")
 	value := chi.URLParam(request, "value")

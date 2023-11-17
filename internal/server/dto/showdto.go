@@ -13,7 +13,7 @@ type ShowAlertDTO struct {
 	Name string `valid:"-"`
 }
 
-func ShowAlertDTOFromRequest(request *http.Request) ShowAlertDTO {
+func CreateShowAlertDTOFromRequest(request *http.Request) ShowAlertDTO {
 	typ := chi.URLParam(request, "type")
 	name := chi.URLParam(request, "name")
 
