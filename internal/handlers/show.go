@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/ilya372317/must-have-metrics/internal/server/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
@@ -15,8 +15,11 @@ type ShowStorage interface {
 
 func ShowHandler(strg ShowStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		name := chi.URLParam(r, "name")
-		alert, err := strg.Get(name)
+		showDTO := dto.ShowAlertDTOFromRequest(r)
+		if _, err := showDTO.Validate(); err != nil {
+			http.Error(w, fmt.Errorf("show parameters is invalid: %w", err).Error(), http.StatusBadRequest)
+		}
+		alert, err := strg.Get(showDTO.Name)
 		if err != nil {
 			http.Error(w, "alert not found", http.StatusNotFound)
 			return

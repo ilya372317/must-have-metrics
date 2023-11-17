@@ -23,15 +23,9 @@ func AlertRouter(repository AlertStorage, pathToFile string) *chi.Mux {
 	router.Get("/", handlers.IndexHandler(repository, pathToFile))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
-		r.Use(
-			middleware.TypeValidator(),
-			middleware.NameValidator(),
-			middleware.ValueValidator(),
-		)
 		r.Post("/", handlers.UpdateHandler(repository))
 	})
 	router.Route("/value/{type}/{name}", func(r chi.Router) {
-		r.Use(middleware.TypeValidator(), middleware.NameValidator())
 		r.Get("/", handlers.ShowHandler(repository))
 	})
 	return router

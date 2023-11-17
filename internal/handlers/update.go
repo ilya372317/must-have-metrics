@@ -24,6 +24,10 @@ type UpdateStorage interface {
 func UpdateHandler(storage UpdateStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		updateAlertDTO := dto.CreateAlertDTOFromRequest(request)
+		_, err := updateAlertDTO.Validate()
+		if err != nil {
+			http.Error(writer, fmt.Errorf("invalid parameters: %w", err).Error(), http.StatusBadRequest)
+		}
 		if err := addAlert(storage, updateAlertDTO); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 		}
