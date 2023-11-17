@@ -19,6 +19,7 @@ type AlertStorage interface {
 
 func AlertRouter(repository AlertStorage, pathToFile string) *chi.Mux {
 	router := chi.NewRouter()
+	router.Use(middleware.WithLogging())
 	router.Get("/", handlers.IndexHandler(repository, pathToFile))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {

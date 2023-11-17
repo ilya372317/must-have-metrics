@@ -9,6 +9,8 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/router"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
+	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
+	"github.com/joho/godotenv"
 )
 
 const defaultServerAddress = "localhost:8080"
@@ -17,6 +19,7 @@ const staticFilePath = "static"
 var (
 	repository *storage.InMemoryStorage
 	host       *string
+	sLogger    = logger.Get()
 )
 
 func init() {
@@ -30,16 +33,20 @@ func init() {
 	if cnfg.Host != "" {
 		host = &cnfg.Host
 	}
+	if err := godotenv.Load(".env-server"); err != nil {
+		log.Panic(fmt.Errorf("failed to load env file: %w", err))
+	}
 }
 
 func main() {
 	flag.Parse()
 	if err := run(); err != nil {
-		log.Fatalf("failed to start server on address %s: %v", *host, err)
+		sLogger.Fatalf("failed to start server on address: %s, %v", *host, err)
 	}
 }
 
 func run() error {
+	sLogger.Infof("server is starting...")
 	err := http.ListenAndServe(*host, router.AlertRouter(repository, staticFilePath))
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
