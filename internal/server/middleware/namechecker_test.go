@@ -62,11 +62,11 @@ func TestNameValidator(t *testing.T) {
 			funcForHandle.ServeHTTP(writer, request)
 
 			res := writer.Result()
-			defer func() {
-				if err := res.Body.Close(); err != nil {
+			defer func(body io.ReadCloser) {
+				if err := body.Close(); err != nil {
 					log.Println(err)
 				}
-			}()
+			}(res.Body)
 			responseBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)
