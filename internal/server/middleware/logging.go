@@ -10,29 +10,39 @@ import (
 var sLogger = logger.Get()
 
 type (
-	loggingResponseWriter struct {
-		http.ResponseWriter
-		responseData *responseData
-	}
-
 	responseData struct {
 		status int
 		size   int
 	}
+	loggingResponseWriter struct {
+		http.ResponseWriter
+		responseData *responseData
+	}
 )
+
+func (w *loggingResponseWriter) Write(b []byte) (int, error) {
+	size, err := w.ResponseWriter.Write(b)
+	w.responseData.size = size
+	return size, err
+}
+
+func (w *loggingResponseWriter) WriteHeader(statusCode int) {
+	w.responseData.status = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
 
 func WithLogging() Middleware {
 	return func(h http.Handler) http.Handler {
 		logFn := func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
-			responseData := &responseData{
+			rData := &responseData{
 				status: 0,
 				size:   0,
 			}
 			lw := loggingResponseWriter{
 				ResponseWriter: w,
-				responseData:   responseData,
+				responseData:   rData,
 			}
 			h.ServeHTTP(&lw, r)
 
@@ -42,8 +52,8 @@ func WithLogging() Middleware {
 				"uri", r.RequestURI,
 				"method", r.Method,
 				"duration", duration,
-				"status", responseData.status,
-				"size", responseData.size,
+				"status", rData.status,
+				"size", rData.size,
 			)
 		}
 		return http.HandlerFunc(logFn)
