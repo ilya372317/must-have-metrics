@@ -24,7 +24,7 @@ func ShowAlertDTOFromRequest(request *http.Request) ShowAlertDTO {
 }
 
 func (dto *ShowAlertDTO) Validate() (bool, error) {
-	if result := notEmpty(dto.Name); result == false {
+	if result := notEmpty(dto.Name); !result {
 		return result, errors.New("name of alert not able to be empty")
 	}
 	return validator.Validate(*dto)
