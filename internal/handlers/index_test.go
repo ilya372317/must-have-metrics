@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -69,11 +68,7 @@ func TestIndexHandler(t *testing.T) {
 			handlerToTest.ServeHTTP(writer, request)
 
 			res := writer.Result()
-			defer func() {
-				if err := res.Body.Close(); err != nil {
-					log.Println(err)
-				}
-			}()
+			defer res.Body.Close()
 			responseBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)

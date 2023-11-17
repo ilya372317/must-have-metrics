@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -207,11 +206,7 @@ func TestUpdateHandler(t *testing.T) {
 			handler := UpdateHandler(repo)
 			handler(writer, request)
 			res := writer.Result()
-			defer func() {
-				if err := res.Body.Close(); err != nil {
-					log.Println(err)
-				}
-			}()
+			defer res.Body.Close()
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			if res.StatusCode >= 400 {

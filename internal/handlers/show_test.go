@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -79,11 +78,7 @@ func TestShowHandler(t *testing.T) {
 			handler.ServeHTTP(writer, request)
 
 			res := writer.Result()
-			defer func() {
-				if err := res.Body.Close(); err != nil {
-					log.Println(err)
-				}
-			}()
+			defer res.Body.Close()
 			responseBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 
