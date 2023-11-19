@@ -14,7 +14,6 @@ import (
 )
 
 const defaultServerAddress = "localhost:8080"
-const staticFilePath = "static"
 
 var (
 	repository *storage.InMemoryStorage
@@ -47,7 +46,7 @@ func main() {
 
 func run() error {
 	sLogger.Infof("server is starting...")
-	err := http.ListenAndServe(*host, router.AlertRouter(repository, staticFilePath))
+	err := http.ListenAndServe(*host, router.AlertRouter(repository))
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}

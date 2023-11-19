@@ -17,10 +17,10 @@ type AlertStorage interface {
 	All() []entity.Alert
 }
 
-func AlertRouter(repository AlertStorage, pathToFile string) *chi.Mux {
+func AlertRouter(repository AlertStorage) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.WithLogging())
-	router.Get("/", handlers.IndexHandler(repository, pathToFile))
+	router.Get("/", handlers.IndexHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
 		r.Post("/", handlers.UpdateHandler(repository))

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ilya372317/must-have-metrics/internal/utils"
 	"go.uber.org/zap"
 )
 
@@ -21,9 +22,10 @@ func Get() *zap.SugaredLogger {
 	}
 	createStorageIfNotExists()
 	environment := os.Getenv("ENV")
+	path := utils.BasePath() + "/" + logPath
 	if environment == "prod" {
 		cnfg := zap.NewProductionConfig()
-		cnfg.OutputPaths = []string{logPath}
+		cnfg.OutputPaths = []string{path}
 		log, err := cnfg.Build()
 		if err != nil {
 			panic(fmt.Errorf("failed init zap logger in production: %w", err))
@@ -31,7 +33,7 @@ func Get() *zap.SugaredLogger {
 		logger = log.Sugar()
 	} else {
 		cnfg := zap.NewDevelopmentConfig()
-		cnfg.OutputPaths = []string{logPath}
+		cnfg.OutputPaths = []string{path}
 		log, err := cnfg.Build()
 		if err != nil {
 			panic(fmt.Errorf("failed init zap logger in development: %w", err))
@@ -43,8 +45,8 @@ func Get() *zap.SugaredLogger {
 }
 
 func createStorageIfNotExists() {
-	if _, err := os.Stat(storageFolder); os.IsNotExist(err) {
-		err = os.Mkdir(storageFolder, storagePermission)
+	if _, err := os.Stat(utils.BasePath() + "/" + storageFolder); os.IsNotExist(err) {
+		err = os.Mkdir(utils.BasePath()+"/"+storageFolder, storagePermission)
 		if err != nil {
 			panic(fmt.Errorf("failed create storage folder: %w", err))
 		}

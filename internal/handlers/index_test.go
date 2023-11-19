@@ -64,7 +64,7 @@ func TestIndexHandler(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, "localhost:8080/", nil)
 			require.NoError(t, err)
 			writer := httptest.NewRecorder()
-			handlerToTest := IndexHandler(strg, "../../static")
+			handlerToTest := IndexHandler(strg)
 			handlerToTest.ServeHTTP(writer, request)
 
 			res := writer.Result()

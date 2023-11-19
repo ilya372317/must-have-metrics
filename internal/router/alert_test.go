@@ -15,7 +15,7 @@ import (
 
 func TestAlertRouter(t *testing.T) {
 	strg := storage.NewInMemoryStorage()
-	ts := httptest.NewServer(AlertRouter(strg, "../../static"))
+	ts := httptest.NewServer(AlertRouter(strg))
 	defer ts.Close()
 
 	var testTable = []struct {
