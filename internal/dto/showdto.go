@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/ilya372317/must-have-metrics/internal/server/dto/validator"
+	"github.com/ilya372317/must-have-metrics/internal/dto/validator"
 )
 
 type ShowAlertDTO struct {
@@ -24,7 +24,7 @@ func CreateShowAlertDTOFromRequest(request *http.Request) ShowAlertDTO {
 }
 
 func (dto *ShowAlertDTO) Validate() (bool, error) {
-	if result := notEmpty(dto.Name); !result {
+	if result := NotEmpty(dto.Name); !result {
 		return result, errors.New("name of alert not able to be empty")
 	}
 	return validator.Validate(*dto)

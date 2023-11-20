@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ilya372317/must-have-metrics/internal/server/dto"
+	"github.com/ilya372317/must-have-metrics/internal/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 

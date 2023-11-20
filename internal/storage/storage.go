@@ -1,12 +1,14 @@
 package storage
 
 import (
-	"errors"
-
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-var errAlertNotFound = errors.New("alert not found")
+type ErrAlertNotFound struct{}
+
+func (e *ErrAlertNotFound) Error() string {
+	return "alert not found"
+}
 
 type InMemoryStorage struct {
 	records map[string]entity.Alert
@@ -24,7 +26,7 @@ func (storage *InMemoryStorage) Save(name string, alert entity.Alert) {
 
 func (storage *InMemoryStorage) Update(name string, newValue entity.Alert) error {
 	if !storage.Has(name) {
-		return errAlertNotFound
+		return &ErrAlertNotFound{}
 	}
 	storage.Save(name, newValue)
 
@@ -34,7 +36,7 @@ func (storage *InMemoryStorage) Update(name string, newValue entity.Alert) error
 func (storage *InMemoryStorage) Get(name string) (entity.Alert, error) {
 	alert, ok := storage.records[name]
 	if !ok {
-		return entity.Alert{}, errAlertNotFound
+		return entity.Alert{}, &ErrAlertNotFound{}
 	}
 	return alert, nil
 }

@@ -2,10 +2,11 @@ package dto
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/ilya372317/must-have-metrics/internal/server/dto/validator"
+	"github.com/ilya372317/must-have-metrics/internal/dto/validator"
 )
 
 type UpdateAlertDTO struct {
@@ -26,8 +27,22 @@ func CreateUpdateAlertDTOFromRequest(request *http.Request) UpdateAlertDTO {
 	}
 }
 
+func CreateUpdateAlertDTOFromMetrics(metrics Metrics) UpdateAlertDTO {
+	value := ""
+	if metrics.Delta != nil {
+		value = fmt.Sprintf("%d", *metrics.Delta)
+	} else if metrics.Value != nil {
+		value = fmt.Sprintf("%f", *metrics.Value)
+	}
+	return UpdateAlertDTO{
+		Type: metrics.MType,
+		Name: metrics.ID,
+		Data: value,
+	}
+}
+
 func (dto *UpdateAlertDTO) Validate() (bool, error) {
-	if result := notEmpty(dto.Name); !result {
+	if result := NotEmpty(dto.Name); !result {
 		return result, errors.New("name of alert not able to be empty")
 	}
 	return validator.Validate(*dto)

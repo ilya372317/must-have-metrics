@@ -18,12 +18,17 @@ func TestAlertRouter(t *testing.T) {
 	ts := httptest.NewServer(AlertRouter(strg))
 	defer ts.Close()
 
+	type want struct {
+		status int
+		body   string
+	}
+
 	var testTable = []struct {
 		name   string
 		url    string
 		method string
 		fields map[string]entity.Alert
-		status int
+		want   want
 	}{
 		{
 			name: "index success case",
@@ -34,8 +39,11 @@ func TestAlertRouter(t *testing.T) {
 					Value: int64(1),
 				},
 			},
-			url:    "/",
-			status: http.StatusOK,
+			url: "/",
+			want: want{
+				status: http.StatusOK,
+				body:   "",
+			},
 			method: http.MethodGet,
 		},
 		{
@@ -49,35 +57,56 @@ func TestAlertRouter(t *testing.T) {
 					Value: int64(1),
 				},
 			},
-			status: http.StatusOK,
+			want: want{
+				status: http.StatusOK,
+			},
 		},
 		{
 			name:   "negative show case",
 			url:    "/value/counter/alert1",
 			method: http.MethodGet,
 			fields: map[string]entity.Alert{},
-			status: http.StatusNotFound,
+			want: want{
+				status: http.StatusNotFound,
+			},
 		},
 		{
 			name:   "success update case",
 			url:    "/update/counter/alert/1",
 			method: http.MethodPost,
 			fields: nil,
-			status: http.StatusOK,
+			want: want{
+				status: http.StatusOK,
+			},
 		},
 		{
 			name:   "update type is invalid case",
 			url:    "/update/invalidType/alert/1",
 			method: http.MethodPost,
 			fields: nil,
-			status: http.StatusBadRequest,
+
+			want: want{
+				status: http.StatusBadRequest,
+			},
 		},
 		{
 			name:   "update value is invalid case",
 			url:    "/update/gauge/name/invalidValue",
 			method: http.MethodPost,
 			fields: nil,
-			status: http.StatusBadRequest,
+			want: want{
+				status: http.StatusBadRequest,
+			},
+		},
+		{
+			name:   "update json gauge success case",
+			url:    "/update",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusOK,
+				body:   "",
+			},
 		},
 	}
 
@@ -86,13 +115,16 @@ func TestAlertRouter(t *testing.T) {
 			for name, alert := range tt.fields {
 				strg.Save(name, alert)
 			}
-			resp, _ := testRequest(t, ts, tt.method, tt.url)
+			resp, responseBody := testRequest(t, ts, tt.method, tt.url)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
 					log.Println(err)
 				}
 			}()
-			assert.Equal(t, tt.status, resp.StatusCode)
+			assert.Equal(t, tt.want.status, resp.StatusCode)
+			if tt.want.body != "" {
+				assert.Equal(t, tt.want.body, responseBody)
+			}
 		})
 	}
 }

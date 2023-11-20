@@ -1,5 +1,5 @@
 package dto
 
-func notEmpty(str string) bool {
+func NotEmpty(str string) bool {
 	return str != ""
 }
