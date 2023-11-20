@@ -85,7 +85,7 @@ func (monitor *Monitor) ReportStat(host string, reportInterval time.Duration, re
 func (monitor *Monitor) reportStat(host string, reportSender sender.ReportSender) {
 	for statName, data := range monitor.Data {
 		requestURL := createURLForReportStat(host, data.Type, statName, data.Value)
-		reportSender(requestURL)
+		reportSender(requestURL, "")
 	}
 	monitor.resetPollCount()
 }

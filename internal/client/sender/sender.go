@@ -5,9 +5,9 @@ import (
 	"net/http"
 )
 
-type ReportSender func(requestURL string)
+type ReportSender func(requestURL, body string)
 
-func SendReport(requestURL string) {
+func SendReport(requestURL, body string) {
 	res, err := http.Post(requestURL, "text/plain", nil)
 
 	if err != nil {
