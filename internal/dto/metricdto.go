@@ -35,6 +35,22 @@ func CreateMetricsDTOFromRequest(r *http.Request) (Metrics, error) {
 	return metrics, err
 }
 
+func CreateMetricsDTOFromAlert(alert entity.Alert) Metrics {
+	result := Metrics{
+		ID:    alert.Name,
+		MType: alert.Type,
+	}
+	if alert.Type == entity.TypeCounter {
+		alertValue := alert.Value.(int64)
+		result.Delta = &alertValue
+	} else {
+		alertValue := alert.Value.(float64)
+		result.Value = &alertValue
+	}
+
+	return result
+}
+
 func (m *Metrics) UnmarshalJSON(data []byte) error {
 	type metricAlias Metrics
 	metric := metricAlias{}

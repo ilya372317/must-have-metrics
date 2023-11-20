@@ -38,17 +38,7 @@ func UpdateJsonHandler(storage UpdateJsonStorage) http.HandlerFunc {
 			zapLogger.Error(err)
 			return
 		}
-		responseMetric := dto.Metrics{
-			ID:    newAlert.Name,
-			MType: newAlert.Type,
-		}
-		if newAlert.Type == entity.TypeCounter {
-			alertValue := newAlert.Value.(int64)
-			responseMetric.Delta = &alertValue
-		} else {
-			alertValue := newAlert.Value.(float64)
-			responseMetric.Value = &alertValue
-		}
+		responseMetric := dto.CreateMetricsDTOFromAlert(*newAlert)
 		response, err := json.Marshal(&responseMetric)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
