@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
@@ -24,11 +25,12 @@ func TestAlertRouter(t *testing.T) {
 	}
 
 	var testTable = []struct {
-		name   string
-		url    string
-		method string
-		fields map[string]entity.Alert
-		want   want
+		name        string
+		url         string
+		method      string
+		fields      map[string]entity.Alert
+		want        want
+		requestBody string
 	}{
 		{
 			name: "index success case",
@@ -105,8 +107,92 @@ func TestAlertRouter(t *testing.T) {
 			fields: nil,
 			want: want{
 				status: http.StatusOK,
+				body:   "{\"id\":\"alert\",\"type\":\"gauge\",\"value\":1}",
+			},
+			requestBody: "{\"id\":\"alert\",\"type\":\"gauge\",\"value\":1}",
+		},
+		{
+			name:   "update json counter success case",
+			url:    "/update",
+			method: http.MethodPost,
+			fields: map[string]entity.Alert{
+				"alert": {
+					Value: int64(1),
+					Type:  "counter",
+					Name:  "alert",
+				},
+			},
+			want: want{
+				status: http.StatusOK,
+				body:   "{\"id\":\"alert\",\"type\":\"counter\",\"delta\":2}",
+			},
+			requestBody: "{\"id\":\"alert\",\"type\":\"counter\",\"delta\":1}",
+		},
+		{
+			name:   "update json negative case give delta in gauge type",
+			url:    "/update",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
 				body:   "",
 			},
+			requestBody: "{\"id\":\"alert\",\"type\":\"gauge\",\"delta\":1}",
+		},
+		{
+			name:   "update json negative case give value on counter type",
+			url:    "/update",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
+				body:   "",
+			},
+			requestBody: "{\"id\":\"alert\",\"type\":\"counter\",\"value\":1}",
+		},
+		{
+			name:   "update json negative case give empty body",
+			url:    "/update",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
+				body:   "",
+			},
+			requestBody: "",
+		},
+		{
+			name:   "update json negative case missing type in request body",
+			url:    "/update",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
+				body:   "",
+			},
+			requestBody: "{\"id\":\"alert\",\"delta\":1}",
+		},
+		{
+			name:   "update json negative case missing value in request body",
+			url:    "/update",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
+				body:   "",
+			},
+			requestBody: "{\"id\":\"alert\",\"type\":\"counter\"}",
+		},
+		{
+			name:   "update json negative case missing name in request body",
+			url:    "/update",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
+				body:   "",
+			},
+			requestBody: "\"type\":\"counter\",\"value\":1}",
 		},
 	}
 
@@ -115,7 +201,7 @@ func TestAlertRouter(t *testing.T) {
 			for name, alert := range tt.fields {
 				strg.Save(name, alert)
 			}
-			resp, responseBody := testRequest(t, ts, tt.method, tt.url)
+			resp, responseBody := testRequest(t, ts, tt.method, tt.url, tt.requestBody)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
 					log.Println(err)
@@ -133,10 +219,11 @@ func testRequest(
 	t *testing.T,
 	ts *httptest.Server,
 	method,
-	path string,
+	path,
+	body string,
 ) (*http.Response, string) {
 	t.Helper()
-	req, err := http.NewRequest(method, ts.URL+path, nil)
+	req, err := http.NewRequest(method, ts.URL+path, strings.NewReader(body))
 	require.NoError(t, err)
 
 	resp, err := ts.Client().Do(req)
