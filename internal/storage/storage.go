@@ -54,3 +54,7 @@ func (storage *InMemoryStorage) All() []entity.Alert {
 
 	return values
 }
+
+func (storage *InMemoryStorage) Reset() {
+	storage.records = make(map[string]entity.Alert)
+}

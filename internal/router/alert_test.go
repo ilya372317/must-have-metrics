@@ -194,6 +194,84 @@ func TestAlertRouter(t *testing.T) {
 			},
 			requestBody: "\"type\":\"counter\",\"value\":1}",
 		},
+		{
+			name:   "show json success counter case",
+			url:    "/value",
+			method: http.MethodPost,
+			fields: map[string]entity.Alert{
+				"alert": {
+					Value: int64(1),
+					Type:  "counter",
+					Name:  "alert",
+				},
+			},
+			want: want{
+				status: http.StatusOK,
+				body:   "{\"id\":\"alert\",\"type\":\"counter\",\"delta\":1}",
+			},
+			requestBody: "{\"id\":\"alert\",\"type\":\"counter\"}",
+		},
+		{
+			name:   "show json success gauge case",
+			url:    "/value",
+			method: http.MethodPost,
+			fields: map[string]entity.Alert{
+				"alert": {
+					Value: 1.1,
+					Type:  "gauge",
+					Name:  "alert",
+				},
+			},
+			want: want{
+				status: http.StatusOK,
+				body:   "{\"id\":\"alert\",\"type\":\"gauge\",\"value\":1.1}",
+			},
+			requestBody: "{\"id\":\"alert\",\"type\":\"counter\"}",
+		},
+		{
+			name:   "negative show json case",
+			url:    "/value",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusNotFound,
+				body:   "",
+			},
+			requestBody: "{\"id\":\"alert\",\"type\":\"counter\"}",
+		},
+		{
+			name:   "negative show json without type case",
+			url:    "/value",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
+				body:   "",
+			},
+			requestBody: "{\"id\":\"alert\"}",
+		},
+		{
+			name:   "negative show json without id case",
+			url:    "/value",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
+				body:   "",
+			},
+			requestBody: "{\"type\":\"counter\"}",
+		},
+		{
+			name:   "negative show json empty body case",
+			url:    "/value",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusBadRequest,
+				body:   "",
+			},
+			requestBody: "",
+		},
 	}
 
 	for _, tt := range testTable {
@@ -211,6 +289,7 @@ func TestAlertRouter(t *testing.T) {
 			if tt.want.body != "" {
 				assert.Equal(t, tt.want.body, responseBody)
 			}
+			strg.Reset()
 		})
 	}
 }
