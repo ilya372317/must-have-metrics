@@ -1,7 +1,6 @@
 package dto
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,7 +9,7 @@ import (
 
 type ShowAlertDTO struct {
 	Type string `valid:"in(gauge|counter)"`
-	Name string `valid:"-"`
+	Name string `valid:"type(string)"`
 }
 
 func CreateShowAlertDTOFromRequest(request *http.Request) ShowAlertDTO {
@@ -31,10 +30,5 @@ func CreateShowAlertDTOFromMetrics(metrics Metrics) ShowAlertDTO {
 }
 
 func (dto *ShowAlertDTO) Validate() (bool, error) {
-	nameNotEmpty := NotEmpty(dto.Name)
-	typeNotEmpty := NotEmpty(dto.Type)
-	if !nameNotEmpty || !typeNotEmpty {
-		return false, errors.New("missing some required fields")
-	}
 	return validator.Validate(*dto)
 }

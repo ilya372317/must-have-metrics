@@ -13,7 +13,7 @@ import (
 
 type UpdateAlertDTO struct {
 	Type string `valid:"in(gauge|counter)"`
-	Name string `valid:"-"`
+	Name string `valid:"type(string)"`
 	Data string `valid:"stringisnumber"`
 }
 
@@ -45,12 +45,6 @@ func CreateUpdateAlertDTOFromMetrics(metrics Metrics) UpdateAlertDTO {
 }
 
 func (dto *UpdateAlertDTO) Validate() (bool, error) {
-
-	nameNotEmpty := NotEmpty(dto.Name)
-	typeNotEmpty := NotEmpty(dto.Type)
-	if !nameNotEmpty || !typeNotEmpty {
-		return false, errors.New("missing some required fields")
-	}
 	switch dto.Type {
 	case entity.TypeGauge:
 		if !stringIsFloat(dto.Data) {

@@ -8,6 +8,7 @@ import (
 
 func Validate(dataTransferObject interface{}) (bool, error) {
 	registerCustomValidators()
+	govalidator.SetFieldsRequiredByDefault(true)
 	result, err := govalidator.ValidateStruct(dataTransferObject)
 	return result, err
 }
