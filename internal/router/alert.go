@@ -23,10 +23,10 @@ func AlertRouter(repository AlertStorage) *chi.Mux {
 	router.Get("/", handlers.IndexHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
-		r.Post("/", handlers.UpdateJsonHandler(repository))
+		r.Post("/", handlers.UpdateJSONHandler(repository))
 	})
 	router.Route("/value", func(r chi.Router) {
-		r.Post("/", handlers.ShowJsonHandler(repository))
+		r.Post("/", handlers.ShowJSONHandler(repository))
 	})
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
 		r.Post("/", handlers.UpdateHandler(repository))

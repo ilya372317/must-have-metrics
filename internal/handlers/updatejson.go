@@ -19,7 +19,7 @@ type UpdateJsonStorage interface {
 	Has(name string) bool
 }
 
-func UpdateJsonHandler(storage UpdateJsonStorage) http.HandlerFunc {
+func UpdateJSONHandler(storage UpdateJsonStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
 		metrics, err := dto.CreateMetricsDTOFromRequest(request)
