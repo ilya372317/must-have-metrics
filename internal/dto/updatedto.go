@@ -33,8 +33,9 @@ func CreateUpdateAlertDTOFromMetrics(metrics Metrics) UpdateAlertDTO {
 	value := ""
 	if metrics.Delta != nil && metrics.MType == entity.TypeCounter {
 		value = fmt.Sprintf("%d", *metrics.Delta)
+
 	} else if metrics.Value != nil && metrics.MType == entity.TypeGauge {
-		value = fmt.Sprintf("%f", *metrics.Value)
+		value = strconv.FormatFloat(*metrics.Value, 'f', -1, 64)
 	}
 	return UpdateAlertDTO{
 		Type: metrics.MType,
