@@ -72,7 +72,7 @@ func (monitor *Monitor) collectStat(rtm *runtime.MemStats) {
 	monitor.setGaugeValue("NumGC", uint64(rtm.NumGC))
 	monitor.setGaugeValue("NumForcedGC", uint64(rtm.NumForcedGC))
 	monitor.setGaugeValue("GCCPUFraction", uint64(rtm.GCCPUFraction))
-	monitor.setCounterValue(randomValueName, utils.GetRandomValue(minRandomValue, maxRandomValue))
+	monitor.setGaugeValue(randomValueName, uint64(utils.GetRandomValue(minRandomValue, maxRandomValue)))
 	monitor.updatePollCount()
 }
 
