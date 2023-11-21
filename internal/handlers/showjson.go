@@ -11,11 +11,11 @@ import (
 
 var showLogger = logger.Get()
 
-type ShowJsonStorage interface {
+type ShowJSONStorage interface {
 	Get(name string) (entity.Alert, error)
 }
 
-func ShowJSONHandler(storage ShowJsonStorage) http.HandlerFunc {
+func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
 		metrics, err := dto.CreateMetricsDTOFromRequest(request)

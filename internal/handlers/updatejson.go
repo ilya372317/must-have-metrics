@@ -12,14 +12,14 @@ import (
 
 var zapLogger = logger.Get()
 
-type UpdateJsonStorage interface {
+type UpdateJSONStorage interface {
 	Save(name string, alert entity.Alert)
 	Update(name string, alert entity.Alert) error
 	Get(name string) (entity.Alert, error)
 	Has(name string) bool
 }
 
-func UpdateJSONHandler(storage UpdateJsonStorage) http.HandlerFunc {
+func UpdateJSONHandler(storage UpdateJSONStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
 		metrics, err := dto.CreateMetricsDTOFromRequest(request)

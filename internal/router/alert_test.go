@@ -107,9 +107,9 @@ func TestAlertRouter(t *testing.T) {
 			fields: nil,
 			want: want{
 				status: http.StatusOK,
-				body:   "{\"id\":\"alert\",\"type\":\"gauge\",\"value\":1}",
+				body:   "{\"id\":\"alert\",\"type\":\"gauge\",\"value\":363334.99574712414}",
 			},
-			requestBody: "{\"id\":\"alert\",\"type\":\"gauge\",\"value\":1}",
+			requestBody: "{\"id\":\"alert\",\"type\":\"gauge\",\"value\":363334.99574712414}",
 		},
 		{
 			name:   "update json counter success case",
