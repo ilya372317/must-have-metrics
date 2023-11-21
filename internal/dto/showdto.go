@@ -23,9 +23,18 @@ func CreateShowAlertDTOFromRequest(request *http.Request) ShowAlertDTO {
 	}
 }
 
+func CreateShowAlertDTOFromMetrics(metrics Metrics) ShowAlertDTO {
+	return ShowAlertDTO{
+		Type: metrics.MType,
+		Name: metrics.ID,
+	}
+}
+
 func (dto *ShowAlertDTO) Validate() (bool, error) {
-	if result := NotEmpty(dto.Name); !result {
-		return result, errors.New("name of alert not able to be empty")
+	nameNotEmpty := NotEmpty(dto.Name)
+	typeNotEmpty := NotEmpty(dto.Type)
+	if !nameNotEmpty || !typeNotEmpty {
+		return false, errors.New("missing some required fields")
 	}
 	return validator.Validate(*dto)
 }
