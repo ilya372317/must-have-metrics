@@ -16,6 +16,7 @@ type IndexStorage interface {
 
 func IndexHandler(strg IndexStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "text/html")
 		allAlerts := strg.All()
 		sort.SliceStable(allAlerts, func(i, j int) bool {
 			return allAlerts[i].Name < allAlerts[j].Name
