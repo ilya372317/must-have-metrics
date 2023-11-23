@@ -1,18 +1,35 @@
 package sender
 
 import (
-	"log"
+	"bytes"
 	"net/http"
-	"strings"
+
+	"github.com/ilya372317/must-have-metrics/internal/utils/compress"
+	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 )
+
+const failedSaveDataErrPattern = "failed to save data on server: %v\n"
+
+var sendLogger = logger.Get()
 
 type ReportSender func(requestURL, body string)
 
 func SendReport(requestURL, body string) {
-	res, err := http.Post(requestURL, "text/plain", strings.NewReader(body))
+	compressedData, errCompress := compress.Do([]byte(body))
+	if errCompress != nil {
+		sendLogger.Errorf(failedSaveDataErrPattern, errCompress)
+	}
+	request, errRequest := http.NewRequest(http.MethodPost, requestURL, bytes.NewReader(compressedData))
+	if errRequest != nil {
+		sendLogger.Errorf(failedSaveDataErrPattern, errRequest)
+		return
+	}
+	request.Header.Set("Content-Encoding", "gzip")
+
+	res, err := http.DefaultClient.Do(request)
 
 	if err != nil {
-		log.Printf("failed to save data on server: %v\n", err)
+		sendLogger.Errorf(failedSaveDataErrPattern, err)
 		return
 	}
 	_ = res.Body.Close()

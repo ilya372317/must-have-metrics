@@ -1,6 +1,7 @@
 package router
 
 import (
+	"compress/gzip"
 	"io"
 	"log"
 	"net/http"
@@ -303,6 +304,7 @@ func testRequest(
 ) (*http.Response, string) {
 	t.Helper()
 	req, err := http.NewRequest(method, ts.URL+path, strings.NewReader(body))
+	req.Header.Set("Accept-Encoding", "gzip")
 	require.NoError(t, err)
 
 	resp, err := ts.Client().Do(req)
@@ -313,7 +315,10 @@ func testRequest(
 		}
 	}()
 
-	respBody, err := io.ReadAll(resp.Body)
+	gzipReader, err := gzip.NewReader(resp.Body)
+	require.NoError(t, err)
+
+	respBody, err := io.ReadAll(gzipReader)
 	require.NoError(t, err)
 
 	return resp, string(respBody)
