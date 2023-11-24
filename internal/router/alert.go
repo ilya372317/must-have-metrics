@@ -15,21 +15,28 @@ type AlertStorage interface {
 	Get(name string) (entity.Alert, error)
 	Has(name string) bool
 	All() []entity.Alert
+	StoreToFilesystem(filepath string) error
 }
 
-func AlertRouter(repository AlertStorage) *chi.Mux {
+func AlertRouter(repository AlertStorage, isSyncSaving bool, fileStoragePath string) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.WithLogging())
 	router.Use(middleware.Compressed())
 	router.Get("/", handlers.IndexHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
+		if isSyncSaving {
+			r.Use(middleware.SavingMetricsInFile(repository, fileStoragePath))
+		}
 		r.Post("/", handlers.UpdateJSONHandler(repository))
 	})
 	router.Route("/value", func(r chi.Router) {
 		r.Post("/", handlers.ShowJSONHandler(repository))
 	})
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
+		if isSyncSaving {
+			r.Use(middleware.SavingMetricsInFile(repository, fileStoragePath))
+		}
 		r.Post("/", handlers.UpdateHandler(repository))
 	})
 	router.Route("/value/{type}/{name}", func(r chi.Router) {

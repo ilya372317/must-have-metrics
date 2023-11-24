@@ -1,10 +1,39 @@
 package config
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+
+	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
+)
+
+var serverConfig *ServerConfig
 
 type ServerConfig struct {
 	sync.Mutex
 	parameters map[string]Parameter
+}
+
+func GetServerConfig() *ServerConfig {
+	if serverConfig == nil {
+		logger.Get().Panicf("You forget init server configuration! Please, do it in cmd/server/main.go")
+	}
+
+	return serverConfig
+}
+
+func InitServerConfig() error {
+	if serverConfig != nil {
+		return nil
+	}
+
+	serverConfig = newServerConfig()
+	if err := initConfiguration(serverConfig); err != nil {
+		serverConfig = nil
+		return fmt.Errorf("failed init server configuration: %w", err)
+	}
+
+	return nil
 }
 
 func (s *ServerConfig) GetValue(alias string) string {
@@ -15,15 +44,11 @@ func (s *ServerConfig) GetValue(alias string) string {
 	return value
 }
 
-func (s *ServerConfig) Init() error {
-	return initConfiguration(s)
-}
-
 func (s *ServerConfig) GetParameters() map[string]Parameter {
 	return s.parameters
 }
 
-func NewServerConfig() *ServerConfig {
+func newServerConfig() *ServerConfig {
 	return &ServerConfig{
 		parameters: serverParams,
 	}

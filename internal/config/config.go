@@ -10,7 +10,10 @@ import (
 )
 
 var serverParams = map[string]Parameter{
-	"host": &params.HostConfig{},
+	"host":           &params.HostConfig{},
+	"store_interval": &params.StoreIntervalConfig{},
+	"store_path":     &params.StoreFilePathConfig{},
+	"restore":        &params.RestoreConfig{},
 }
 
 var agentParams = map[string]Parameter{
