@@ -6,6 +6,7 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/ilya372317/must-have-metrics/internal/config/params"
+	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 	"github.com/joho/godotenv"
 )
 
@@ -40,7 +41,7 @@ type Parameter interface {
 
 func initConfiguration(config Configuration) error {
 	if err := godotenv.Load(".env-server"); err != nil {
-		return fmt.Errorf("failed load .env-server file: %w", err)
+		logger.Get().Warnf("failed load .env-server file: %v", err)
 	}
 
 	for _, paramConfig := range config.GetParameters() {
