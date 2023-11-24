@@ -27,4 +27,4 @@ vendor/
 # Static analys
 /golangci-lint
 /storage
-/.env-server
+.env-server
