@@ -38,10 +38,11 @@ func CreateMetricsDTOFromAlert(alert entity.Alert) Metrics {
 		MType: alert.Type,
 	}
 	if alert.Type == entity.TypeCounter {
-		alertValue := alert.Value.(int64)
+		value, _ := alert.Value.(int64)
+		alertValue := value
 		result.Delta = &alertValue
 	} else {
-		alertValue := alert.Value.(float64)
+		alertValue, _ := alert.Value.(float64)
 		result.Value = &alertValue
 	}
 
