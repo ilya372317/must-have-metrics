@@ -42,8 +42,7 @@ func CreateMetricsDTOFromAlert(alert entity.Alert) Metrics {
 		if !ok {
 			value = int64(alert.Value.(float64))
 		}
-		alertValue := value
-		result.Delta = &alertValue
+		result.Delta = &value
 	} else {
 		value, ok := alert.Value.(float64)
 		if !ok {
