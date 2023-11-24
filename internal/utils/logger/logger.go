@@ -25,7 +25,7 @@ func Get() *zap.SugaredLogger {
 	path := utils.BasePath() + "/" + logPath
 	if environment == "prod" {
 		cnfg := zap.NewProductionConfig()
-		cnfg.OutputPaths = []string{path}
+		cnfg.OutputPaths = []string{path, "stdout"}
 		log, err := cnfg.Build()
 		if err != nil {
 			panic(fmt.Errorf("failed init zap logger in production: %w", err))
@@ -33,7 +33,7 @@ func Get() *zap.SugaredLogger {
 		logger = log.Sugar()
 	} else {
 		cnfg := zap.NewDevelopmentConfig()
-		cnfg.OutputPaths = []string{path}
+		cnfg.OutputPaths = []string{path, "stdout"}
 		log, err := cnfg.Build()
 		if err != nil {
 			panic(fmt.Errorf("failed init zap logger in development: %w", err))

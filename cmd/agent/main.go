@@ -1,48 +1,41 @@
 package main
 
 import (
-	"flag"
-	"log"
+	"strconv"
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
 	"github.com/ilya372317/must-have-metrics/internal/client/statistic"
 	"github.com/ilya372317/must-have-metrics/internal/config"
+	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 )
-
-const defaultPollInterval = 2
-const defaultReportInterval = 10
 
 var (
-	host           *string
-	pollInterval   *int
-	reportInterval *int
+	agentLogger = logger.Get()
 )
 
-func init() {
-	cnfg := new(config.AgentConfig)
-	if err := cnfg.Init(); err != nil {
-		log.Fatalln(err.Error())
-	}
-	host = flag.String("a", "localhost:8080", "server address")
-	pollInterval = flag.Int("p", defaultPollInterval, "frequency of metrics collection")
-	reportInterval = flag.Int("r", defaultReportInterval, "frequency of send metrics on server")
-
-	if cnfg.Host != "" {
-		host = &cnfg.Host
-	}
-	if cnfg.PollInterval != 0 {
-		pollInterval = &cnfg.PollInterval
-	}
-	if cnfg.ReportInterval != 0 {
-		reportInterval = &cnfg.ReportInterval
-	}
-}
-
 func main() {
-	flag.Parse()
+	cnfg := config.NewAgentConfig()
+	err := cnfg.Init()
+	if err != nil {
+		agentLogger.Panicf("failed parse config: %v", err)
+	}
+
+	pollInterval, err := strconv.Atoi(cnfg.GetValue("poll_interval"))
+	if err != nil {
+		agentLogger.Panicf("failed parse poll interval: %v", err)
+	}
+	reportInterval, err := strconv.Atoi(cnfg.GetValue("report_interval"))
+	if err != nil {
+		agentLogger.Panicf("failed parse report interval: %v", err)
+	}
+
 	monitor := statistic.New()
-	go monitor.CollectStat(time.Duration(*pollInterval) * time.Second)
-	go monitor.ReportStat(*host, time.Duration(*reportInterval)*time.Second, sender.SendReport)
+	go monitor.CollectStat(time.Duration(pollInterval) * time.Second)
+	go monitor.ReportStat(
+		cnfg.GetValue("host"),
+		time.Duration(reportInterval)*time.Second,
+		sender.SendReport,
+	)
 	select {}
 }
