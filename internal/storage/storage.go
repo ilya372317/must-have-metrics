@@ -7,7 +7,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
@@ -67,8 +66,7 @@ func (storage *InMemoryStorage) Reset() {
 	storage.Records = make(map[string]entity.Alert)
 }
 
-func (storage *InMemoryStorage) FillFromFilesystem() error {
-	filePath := config.GetServerConfig().GetValue("store_path")
+func (storage *InMemoryStorage) FillFromFilesystem(filePath string) error {
 	if filePath == "" {
 		return errors.New("no need to save data in filesystem")
 	}

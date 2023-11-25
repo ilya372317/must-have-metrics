@@ -30,7 +30,7 @@ func main() {
 		sLogger.Panicf("invalid restart configuration value: %v", err)
 	}
 	if isRestart {
-		if err = repository.FillFromFilesystem(); err != nil {
+		if err = repository.FillFromFilesystem(cnfg.GetValue("store_path")); err != nil {
 			sLogger.Warn(err)
 		}
 	}
