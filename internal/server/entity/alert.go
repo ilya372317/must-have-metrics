@@ -35,13 +35,11 @@ func (a *Alert) UnmarshalJSON(bytes []byte) error {
 		if !ok {
 			alertValue.Value = int64(alertValue.Value.(float64))
 		}
-		break
 	case TypeGauge:
 		_, ok := alertValue.Value.(float64)
 		if !ok {
 			alertValue.Value = float64(alertValue.Value.(int64))
 		}
-		break
 	default:
 		return errors.New("invalid value in alert")
 	}
