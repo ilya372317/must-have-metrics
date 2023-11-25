@@ -58,11 +58,7 @@ type Reader struct {
 }
 
 func (r *Reader) Read(p []byte) (n int, err error) {
-	size, err := r.gzipReader.Read(p)
-	if err != nil {
-		err = fmt.Errorf("failed read from gzip response reader: %w", err)
-	}
-	return size, err
+	return r.gzipReader.Read(p) //nolint //error may be good case
 }
 
 func (r *Reader) Close() error {
