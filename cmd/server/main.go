@@ -13,6 +13,8 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 )
 
+const storePathAlias = "store_path"
+
 var (
 	repository *storage.InMemoryStorage
 	sLogger    = logger.Get()
@@ -30,7 +32,7 @@ func main() {
 		sLogger.Panicf("invalid restart configuration value: %v", err)
 	}
 	if isRestart {
-		if err = repository.FillFromFilesystem(cnfg.GetValue("store_path")); err != nil {
+		if err = repository.FillFromFilesystem(cnfg.GetValue(storePathAlias)); err != nil {
 			sLogger.Warn(err)
 		}
 	}
@@ -43,12 +45,12 @@ func main() {
 	if storeInterval > 0 {
 		go service.SaveDataToFilesystemByInterval(
 			time.Duration(storeInterval)*time.Second,
-			cnfg.GetValue("store_path"),
+			cnfg.GetValue(storePathAlias),
 			repository,
 		)
 	}
 
-	if err = run(cnfg, storeInterval == 0, cnfg.GetValue("store_path")); err != nil {
+	if err = run(cnfg, storeInterval == 0, cnfg.GetValue(storePathAlias)); err != nil {
 		sLogger.Panicf("failed to start server on address: %s, %v", cnfg.GetValue("host"), err)
 	}
 }
