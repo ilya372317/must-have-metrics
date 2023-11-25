@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/asaskevich/govalidator"
@@ -10,6 +11,9 @@ func Validate(dataTransferObject interface{}) (bool, error) {
 	registerCustomValidators()
 	govalidator.SetFieldsRequiredByDefault(true)
 	result, err := govalidator.ValidateStruct(dataTransferObject)
+	if err != nil {
+		err = fmt.Errorf("sturct is invalid: %w", err)
+	}
 	return result, err
 }
 

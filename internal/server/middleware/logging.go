@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -23,6 +24,9 @@ type (
 func (w *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := w.ResponseWriter.Write(b)
 	w.responseData.size = size
+	if err != nil {
+		err = fmt.Errorf("failed encode body: %w", err)
+	}
 	return size, err
 }
 

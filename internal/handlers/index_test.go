@@ -68,7 +68,9 @@ func TestIndexHandler(t *testing.T) {
 			handlerToTest.ServeHTTP(writer, request)
 
 			res := writer.Result()
-			defer res.Body.Close()
+			defer func() {
+				_ = res.Body.Close()
+			}()
 			responseBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want.code, res.StatusCode)

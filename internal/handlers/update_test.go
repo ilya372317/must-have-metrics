@@ -205,7 +205,9 @@ func TestUpdateHandler(t *testing.T) {
 			handler := UpdateHandler(repo)
 			handler(writer, request)
 			res := writer.Result()
-			defer res.Body.Close()
+			defer func() {
+				_ = res.Body.Close()
+			}()
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			if res.StatusCode >= 400 {

@@ -9,6 +9,11 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 )
 
+const (
+	contentTypeHeader      = "content-type"
+	jsonContentHeaderValue = "application/json"
+)
+
 var showLogger = logger.Get()
 
 type ShowJSONStorage interface {
@@ -17,7 +22,7 @@ type ShowJSONStorage interface {
 
 func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("content-type", "application/json")
+		writer.Header().Set(contentTypeHeader, jsonContentHeaderValue)
 		metrics, err := dto.CreateMetricsDTOFromRequest(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)

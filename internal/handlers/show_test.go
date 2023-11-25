@@ -78,7 +78,9 @@ func TestShowHandler(t *testing.T) {
 			handler.ServeHTTP(writer, request)
 
 			res := writer.Result()
-			defer res.Body.Close()
+			defer func() {
+				_ = res.Body.Close()
+			}()
 			responseBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 

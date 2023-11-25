@@ -33,7 +33,6 @@ func CreateUpdateAlertDTOFromMetrics(metrics Metrics) UpdateAlertDTO {
 	value := ""
 	if metrics.Delta != nil && metrics.MType == entity.TypeCounter {
 		value = fmt.Sprintf("%d", *metrics.Delta)
-
 	} else if metrics.Value != nil && metrics.MType == entity.TypeGauge {
 		value = strconv.FormatFloat(*metrics.Value, 'f', -1, 64)
 	}
@@ -56,16 +55,19 @@ func (dto *UpdateAlertDTO) Validate() (bool, error) {
 		}
 	}
 
-	return validator.Validate(*dto)
+	isValid, err := validator.Validate(*dto)
+	if err != nil {
+		err = fmt.Errorf("update dto is invalid: %w", err)
+	}
+
+	return isValid, err
 }
 
 func stringIsFloat(str string) bool {
 	_, floatErr := strconv.ParseFloat(str, 64)
 	return floatErr == nil
 }
-
 func stringIsInt(str string) bool {
 	_, intErr := strconv.Atoi(str)
 	return intErr == nil
-
 }

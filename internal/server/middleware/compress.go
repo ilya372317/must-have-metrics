@@ -8,6 +8,11 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 )
 
+const (
+	contentEncodingHeader = "Content-Encoding"
+	gzipEncoding          = "gzip"
+)
+
 var compressLogger = logger.Get()
 
 func Compressed() Middleware {
@@ -16,18 +21,19 @@ func Compressed() Middleware {
 			ow := w
 
 			acceptEncoding := r.Header.Get("Accept-Encoding")
-			acceptGzip := strings.Contains(acceptEncoding, "gzip")
+			acceptGzip := strings.Contains(acceptEncoding, gzipEncoding)
 			if acceptGzip {
 				cw := compress.NewWriter(w)
 				ow = cw
-				w.Header().Set("Content-Encoding", "gzip")
-				defer cw.Close()
+				w.Header().Set(contentEncodingHeader, gzipEncoding)
+				defer func() {
+					_ = cw.Close()
+				}()
 			}
 
-			contentEncoding := r.Header.Get("Content-Encoding")
-			contentCompressed := strings.Contains(contentEncoding, "gzip")
+			contentEncoding := r.Header.Get(contentEncodingHeader)
+			contentCompressed := strings.Contains(contentEncoding, gzipEncoding)
 			if contentCompressed {
-
 				cr, err := compress.NewReader(r.Body)
 				if err != nil {
 					http.Error(w, "failed create gzip compressor", http.StatusInternalServerError)
@@ -35,7 +41,9 @@ func Compressed() Middleware {
 					return
 				}
 				r.Body = cr
-				defer cr.Close()
+				defer func() {
+					_ = cr.Close()
+				}()
 			}
 
 			h.ServeHTTP(ow, r)
