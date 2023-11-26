@@ -28,7 +28,7 @@ func InitServerConfig() error {
 	}
 
 	serverConfig = newServerConfig()
-	if err := initConfiguration(serverConfig); err != nil {
+	if err := initConfiguration(serverConfig, true); err != nil {
 		serverConfig = nil
 		return fmt.Errorf("failed init server configuration: %w", err)
 	}

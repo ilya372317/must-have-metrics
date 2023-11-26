@@ -6,7 +6,7 @@ type FilesystemSupportStorage interface {
 	StoreToFilesystem(filepath string) error
 }
 
-func SavingMetricsInFile(repo FilesystemSupportStorage, filepath string) Middleware {
+func SaveMetricsInFile(repo FilesystemSupportStorage, filepath string) Middleware {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			handler.ServeHTTP(writer, request)

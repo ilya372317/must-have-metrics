@@ -39,8 +39,15 @@ type Parameter interface {
 	GetFlagDescription() string
 }
 
-func initConfiguration(config Configuration) error {
-	if err := godotenv.Load(".env-server"); err != nil {
+func initConfiguration(config Configuration, isServer bool) error {
+	envFileName := ""
+	if isServer {
+		envFileName = ".env-server"
+	} else {
+		envFileName = ".env-agent"
+	}
+
+	if err := godotenv.Load(envFileName); err != nil {
 		logger.Get().Warnf("failed load .env-server file: %v", err)
 	}
 

@@ -28,7 +28,7 @@ func InitAgentConfig() error {
 	}
 
 	agentConfig = newAgentConfig()
-	if err := initConfiguration(agentConfig); err != nil {
+	if err := initConfiguration(agentConfig, false); err != nil {
 		serverConfig = nil
 		return fmt.Errorf("failed init agent configuration: %w", err)
 	}

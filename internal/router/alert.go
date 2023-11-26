@@ -26,7 +26,7 @@ func AlertRouter(repository AlertStorage, isSyncSaving bool, fileStoragePath str
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
 		if isSyncSaving {
-			r.Use(middleware.SavingMetricsInFile(repository, fileStoragePath))
+			r.Use(middleware.SaveMetricsInFile(repository, fileStoragePath))
 		}
 		r.Post("/", handlers.UpdateJSONHandler(repository))
 	})
@@ -35,7 +35,7 @@ func AlertRouter(repository AlertStorage, isSyncSaving bool, fileStoragePath str
 	})
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
 		if isSyncSaving {
-			r.Use(middleware.SavingMetricsInFile(repository, fileStoragePath))
+			r.Use(middleware.SaveMetricsInFile(repository, fileStoragePath))
 		}
 		r.Post("/", handlers.UpdateHandler(repository))
 	})
