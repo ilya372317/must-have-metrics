@@ -26,22 +26,18 @@ var (
 )
 
 func main() {
-	if err := config.InitServerConfig(); err != nil {
-		sLogger.Panicf("failed start server: %v", err)
-	}
 	repository = storage.NewInMemoryStorage()
 
-	cnfg := config.GetServerConfig()
-	isRestart, err := strconv.ParseBool(cnfg.GetValue(restoreAlias))
-	if err != nil {
-		sLogger.Panicf("invalid restart configuration value: %v", err)
+	if err := run(); err != nil {
+		sLogger.Panicf("failed to start server: %v", err)
 	}
-	if isRestart {
-		if err = repository.FillFromFilesystem(cnfg.GetValue(storePathAlias)); err != nil {
-			sLogger.Warn(err)
-		}
-	}
+}
 
+func run() error {
+	cnfg, err := config.GetServerConfig()
+	if err != nil {
+		sLogger.Panicf("failed get server config: %v", err)
+	}
 	storeInterval, err := strconv.Atoi(cnfg.GetValue(storeIntervalAlias))
 	if err != nil {
 		sLogger.Panicf("failed parse store interval parameter")
@@ -54,15 +50,20 @@ func main() {
 			repository,
 		)
 	}
-
-	if err = run(cnfg, storeInterval == 0, cnfg.GetValue(storePathAlias)); err != nil {
-		sLogger.Panicf("failed to start server on address: %s, %v", cnfg.GetValue(hostAlias), err)
+	isRestart, err := strconv.ParseBool(cnfg.GetValue(restoreAlias))
+	if err != nil {
+		sLogger.Panicf("invalid restart configuration value: %v", err)
 	}
-}
-
-func run(cnfg *config.ServerConfig, isSyncSaving bool, fileStoragePath string) error {
+	if isRestart {
+		if err = repository.FillFromFilesystem(cnfg.GetValue(storePathAlias)); err != nil {
+			sLogger.Warn(err)
+		}
+	}
 	sLogger.Infof("server is starting...")
-	err := http.ListenAndServe(cnfg.GetValue(hostAlias), router.AlertRouter(repository, isSyncSaving, fileStoragePath))
+	err = http.ListenAndServe(
+		cnfg.GetValue(hostAlias),
+		router.AlertRouter(repository),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}

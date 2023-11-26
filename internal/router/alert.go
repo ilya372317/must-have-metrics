@@ -18,25 +18,21 @@ type AlertStorage interface {
 	StoreToFilesystem(filepath string) error
 }
 
-func AlertRouter(repository AlertStorage, isSyncSaving bool, fileStoragePath string) *chi.Mux {
+func AlertRouter(repository AlertStorage) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.WithLogging())
 	router.Use(middleware.Compressed())
 	router.Get("/", handlers.IndexHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
-		if isSyncSaving {
-			r.Use(middleware.SaveMetricsInFile(repository, fileStoragePath))
-		}
+		r.Use(middleware.SaveMetricsInFile(repository))
 		r.Post("/", handlers.UpdateJSONHandler(repository))
 	})
 	router.Route("/value", func(r chi.Router) {
 		r.Post("/", handlers.ShowJSONHandler(repository))
 	})
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
-		if isSyncSaving {
-			r.Use(middleware.SaveMetricsInFile(repository, fileStoragePath))
-		}
+		r.Use(middleware.SaveMetricsInFile(repository))
 		r.Post("/", handlers.UpdateHandler(repository))
 	})
 	router.Route("/value/{type}/{name}", func(r chi.Router) {

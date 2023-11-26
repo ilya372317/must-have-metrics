@@ -3,8 +3,6 @@ package config
 import (
 	"fmt"
 	"sync"
-
-	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 )
 
 var agentConfig *AgentConfig
@@ -14,26 +12,18 @@ type AgentConfig struct {
 	parameters map[string]Parameter
 }
 
-func GetAgentConfig() *AgentConfig {
-	if agentConfig == nil {
-		logger.Get().Panicf("You forget init agent configuration! Please, do it in cmd/agent/main.go")
-	}
-
-	return agentConfig
-}
-
-func InitAgentConfig() error {
+func GetAgentConfig() (*AgentConfig, error) {
 	if agentConfig != nil {
-		return nil
+		return agentConfig, nil
 	}
-
 	agentConfig = newAgentConfig()
-	if err := initConfiguration(agentConfig, false); err != nil {
-		serverConfig = nil
-		return fmt.Errorf("failed init agent configuration: %w", err)
+	err := initConfiguration(agentConfig, false)
+	if err != nil {
+		agentConfig = nil
+		return nil, fmt.Errorf("failed get agent configuration: %w", err)
 	}
 
-	return nil
+	return agentConfig, nil
 }
 
 func (a *AgentConfig) GetValue(alias string) string {

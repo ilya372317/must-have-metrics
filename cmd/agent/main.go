@@ -15,11 +15,10 @@ var (
 )
 
 func main() {
-	if err := config.InitAgentConfig(); err != nil {
-		agentLogger.Panicf("failed init agent config: %v", err)
+	cnfg, err := config.GetAgentConfig()
+	if err != nil {
+		agentLogger.Panicf("failed get config: %v", err)
 	}
-
-	cnfg := config.GetAgentConfig()
 	pollInterval, err := strconv.Atoi(cnfg.GetValue("poll_interval"))
 	if err != nil {
 		agentLogger.Panicf("failed parse poll interval: %v", err)

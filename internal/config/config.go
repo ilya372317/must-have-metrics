@@ -10,17 +10,26 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	Host           = "host"
+	StoreInterval  = "store_interval"
+	StorePath      = "store_path"
+	Restore        = "restore"
+	PollInterval   = "poll_interval"
+	ReportInterval = "report_interval"
+)
+
 var serverParams = map[string]Parameter{
-	"host":           &params.HostConfig{},
-	"store_interval": &params.StoreIntervalConfig{},
-	"store_path":     &params.StoreFilePathConfig{},
-	"restore":        &params.RestoreConfig{},
+	Host:          &params.HostConfig{},
+	StoreInterval: &params.StoreIntervalConfig{},
+	StorePath:     &params.StoreFilePathConfig{},
+	Restore:       &params.RestoreConfig{},
 }
 
 var agentParams = map[string]Parameter{
-	"host":            &params.HostConfig{},
-	"poll_interval":   &params.PollIntervalConfig{},
-	"report_interval": &params.ReportIntervalConfig{},
+	Host:           &params.HostConfig{},
+	PollInterval:   &params.PollIntervalConfig{},
+	ReportInterval: &params.ReportIntervalConfig{},
 }
 
 type Configuration interface {
@@ -40,7 +49,7 @@ type Parameter interface {
 }
 
 func initConfiguration(config Configuration, isServer bool) error {
-	envFileName := ""
+	var envFileName string
 	if isServer {
 		envFileName = ".env-server"
 	} else {
