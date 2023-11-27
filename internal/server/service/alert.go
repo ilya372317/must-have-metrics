@@ -12,6 +12,7 @@ import (
 const failedUpdateCounterPattern = "failed update counter alert: %w"
 const failedParseGaugeValuePattern = "failed parse gauge alert value: %w"
 const failedParseCounterValuePattern = "failed parse counter alert value: %w"
+const failedUpdateGaugeAlertPattern = "failed update gauge alert: %w"
 
 type UpdateStorage interface {
 	Save(name string, alert entity.Alert)
@@ -25,7 +26,7 @@ func AddAlert(repo UpdateStorage, dto dto.UpdateAlertDTO) (*entity.Alert, error)
 	case entity.TypeGauge:
 		alert, err := updateGaugeAlert(dto, repo)
 		if err != nil {
-			return nil, fmt.Errorf("failed update gauge alert: %w", err)
+			return nil, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 		}
 		return alert, nil
 	case entity.TypeCounter:
@@ -49,7 +50,7 @@ func updateGaugeAlert(dto dto.UpdateAlertDTO, repository UpdateStorage) (*entity
 	repository.Save(dto.Name, alert)
 	newAlert, errAlertNotFound := repository.Get(dto.Name)
 	if errAlertNotFound != nil {
-		return nil, fmt.Errorf("failed update gauge alert: %w", err)
+		return nil, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 	}
 
 	return &newAlert, nil

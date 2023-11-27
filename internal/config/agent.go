@@ -8,8 +8,8 @@ import (
 var agentConfig *AgentConfig
 
 type AgentConfig struct {
-	sync.Mutex
 	parameters map[string]Parameter
+	sync.Mutex
 }
 
 func GetAgentConfig() (*AgentConfig, error) {
@@ -27,9 +27,8 @@ func GetAgentConfig() (*AgentConfig, error) {
 }
 
 func (a *AgentConfig) GetValue(alias string) string {
-	value := ""
 	a.Mutex.Lock()
-	value = a.parameters[alias].GetValue()
+	value := a.parameters[alias].GetValue()
 	a.Mutex.Unlock()
 	return value
 }

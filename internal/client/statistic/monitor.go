@@ -101,13 +101,6 @@ func (monitor *Monitor) setGaugeValue(name string, value uint64) {
 	}
 }
 
-func (monitor *Monitor) setCounterValue(name string, value int) {
-	monitor.Data[name] = MonitorValue{
-		Type:  entity.TypeCounter,
-		Delta: &value,
-	}
-}
-
 func (monitor *Monitor) updatePollCount() {
 	_, ok := monitor.Data[counterName]
 	if !ok {

@@ -3,6 +3,7 @@ package entity
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 const (
@@ -26,7 +27,7 @@ func (a *Alert) UnmarshalJSON(bytes []byte) error {
 	}
 
 	if err := json.Unmarshal(bytes, alertValue); err != nil {
-		return err
+		return fmt.Errorf("failed unmarshal alert entity: %w", err)
 	}
 
 	switch alertValue.Type {
