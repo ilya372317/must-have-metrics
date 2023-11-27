@@ -8,7 +8,10 @@ import (
 	"net/http"
 )
 
-const LastPositiveStatusCode = 300
+const (
+	LastPositiveStatusCode       = 300
+	failedCompressDataErrPattern = "failed compress data: %w"
+)
 
 type Writer struct {
 	w          http.ResponseWriter
@@ -31,7 +34,7 @@ func (w *Writer) Header() http.Header {
 func (w *Writer) Write(bytes []byte) (int, error) {
 	size, err := w.gzipWriter.Write(bytes)
 	if err != nil {
-		err = fmt.Errorf("failed compress data: %w", err)
+		err = fmt.Errorf(failedCompressDataErrPattern, err)
 	}
 	return size, err
 }
@@ -95,7 +98,7 @@ func Do(data []byte) ([]byte, error) {
 	}
 	_, err = w.Write(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed compress data: %w", err)
+		return nil, fmt.Errorf(failedCompressDataErrPattern, err)
 	}
 	err = w.Close()
 	if err != nil {

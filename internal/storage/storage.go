@@ -10,15 +10,17 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-type ErrAlertNotFound struct{}
+const filePermission = 0600
 
-func (e *ErrAlertNotFound) Error() string {
+type AlertNotFoundError struct{}
+
+func (e *AlertNotFoundError) Error() string {
 	return "alert not found"
 }
 
 type InMemoryStorage struct {
-	sync.Mutex
 	Records map[string]entity.Alert `json:"records"`
+	sync.Mutex
 }
 
 func NewInMemoryStorage() *InMemoryStorage {
@@ -33,7 +35,7 @@ func (storage *InMemoryStorage) Save(name string, alert entity.Alert) {
 
 func (storage *InMemoryStorage) Update(name string, newValue entity.Alert) error {
 	if !storage.Has(name) {
-		return &ErrAlertNotFound{}
+		return &AlertNotFoundError{}
 	}
 	storage.Save(name, newValue)
 
@@ -43,7 +45,7 @@ func (storage *InMemoryStorage) Update(name string, newValue entity.Alert) error
 func (storage *InMemoryStorage) Get(name string) (entity.Alert, error) {
 	alert, ok := storage.Records[name]
 	if !ok {
-		return entity.Alert{}, &ErrAlertNotFound{}
+		return entity.Alert{}, &AlertNotFoundError{}
 	}
 	return alert, nil
 }
@@ -88,7 +90,7 @@ func (storage *InMemoryStorage) StoreToFilesystem(filepath string) error {
 	if err != nil {
 		return fmt.Errorf("failed serialize metrics: %w", err)
 	}
-	if err = os.WriteFile(filepath, data, 0666); err != nil {
+	if err = os.WriteFile(filepath, data, filePermission); err != nil {
 		return fmt.Errorf("failed save file on disk: %w", err)
 	}
 	storage.Unlock()
