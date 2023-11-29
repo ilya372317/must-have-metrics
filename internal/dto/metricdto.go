@@ -3,17 +3,16 @@ package dto
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-type Metrics struct { //nolint:govet // i don`t now how to fix it
+type Metrics struct {
 	ID    string   `json:"id"`              // Имя метрики
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // Значение метрики в случае передачи counter
 	Value *float64 `json:"value,omitempty"` // Значение метрики в случае передачи gauge
+	Delta *int64   `json:"delta,omitempty"` // Значение метрики в случае передачи counter
 }
 
 func CreateMetricsDTOFromRequest(r *http.Request) (Metrics, error) {
@@ -21,11 +20,7 @@ func CreateMetricsDTOFromRequest(r *http.Request) (Metrics, error) {
 	defer func() {
 		_ = r.Body.Close()
 	}()
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return metrics, fmt.Errorf("failed read body: %w", err)
-	}
-	if err = json.Unmarshal(body, &metrics); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&metrics); err != nil {
 		return metrics, fmt.Errorf("failed desirialize json body: %w", err)
 	}
 

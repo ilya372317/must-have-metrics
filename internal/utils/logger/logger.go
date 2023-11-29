@@ -12,15 +12,15 @@ var logger *zap.SugaredLogger
 
 const (
 	logPath           = "storage/log.txt"
-	storageFolder     = "storage"
-	storagePermission = 0750
+	logFolder         = "storage"
+	logFilePermission = 0750
 )
 
 func Get() *zap.SugaredLogger {
 	if logger != nil {
 		return logger
 	}
-	createStorageIfNotExists()
+	createLogFolderIfNotExists()
 	environment := os.Getenv("ENV")
 	path := utils.BasePath() + "/" + logPath
 	if environment == "prod" {
@@ -44,11 +44,11 @@ func Get() *zap.SugaredLogger {
 	return logger
 }
 
-func createStorageIfNotExists() {
-	if _, err := os.Stat(utils.BasePath() + "/" + storageFolder); os.IsNotExist(err) {
-		err = os.Mkdir(utils.BasePath()+"/"+storageFolder, storagePermission)
+func createLogFolderIfNotExists() {
+	if _, err := os.Stat(utils.BasePath() + "/" + logFolder); os.IsNotExist(err) {
+		err = os.Mkdir(utils.BasePath()+"/"+logFolder, logFilePermission)
 		if err != nil {
-			panic(fmt.Errorf("failed create storage folder: %w", err))
+			panic(fmt.Errorf("failed create log folder: %w", err))
 		}
 	}
 }
