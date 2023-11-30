@@ -14,20 +14,26 @@ import (
 )
 
 func TestUpdateHandler(t *testing.T) {
+	type testAlert struct {
+		Type       string
+		Name       string
+		FloatValue float64
+		IntValue   int64
+	}
 	type query struct {
 		typ   string
 		name  string
 		value string
 	}
 	type want struct {
-		alert entity.Alert
+		alert testAlert
 		code  int
 	}
 
 	tests := []struct {
 		name   string
 		query  query
-		fields map[string]entity.Alert
+		fields map[string]testAlert
 		want   want
 	}{
 		{
@@ -38,14 +44,14 @@ func TestUpdateHandler(t *testing.T) {
 				value: "1.1",
 			},
 			want: want{
-				alert: entity.Alert{
-					Type:  "gauge",
-					Name:  "alert",
-					Value: 1.1,
+				alert: testAlert{
+					Type:       "gauge",
+					Name:       "alert",
+					FloatValue: 1.1,
 				},
 				code: http.StatusOK,
 			},
-			fields: map[string]entity.Alert{},
+			fields: map[string]testAlert{},
 		},
 		{
 			name: "success gauge with not empty storage case",
@@ -55,18 +61,18 @@ func TestUpdateHandler(t *testing.T) {
 				value: "1.2",
 			},
 			want: want{
-				alert: entity.Alert{
-					Type:  "gauge",
-					Name:  "alert",
-					Value: 1.2,
+				alert: testAlert{
+					Type:       "gauge",
+					Name:       "alert",
+					FloatValue: 1.2,
 				},
 				code: http.StatusOK,
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "gauge",
-					Name:  "alert",
-					Value: 1.1,
+					Type:       "gauge",
+					Name:       "alert",
+					FloatValue: 1.1,
 				},
 			},
 		},
@@ -78,14 +84,14 @@ func TestUpdateHandler(t *testing.T) {
 				value: "10",
 			},
 			want: want{
-				alert: entity.Alert{
-					Type:  "counter",
-					Name:  "alert",
-					Value: int64(10),
+				alert: testAlert{
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(10),
 				},
 				code: http.StatusOK,
 			},
-			fields: map[string]entity.Alert{},
+			fields: map[string]testAlert{},
 		},
 		{
 			name: "success counter with not empty storage case",
@@ -95,18 +101,18 @@ func TestUpdateHandler(t *testing.T) {
 				value: "10",
 			},
 			want: want{
-				alert: entity.Alert{
-					Type:  "counter",
-					Name:  "alert",
-					Value: int64(20),
+				alert: testAlert{
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(20),
 				},
 				code: http.StatusOK,
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "counter",
-					Name:  "alert",
-					Value: int64(10),
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(10),
 				},
 			},
 		},
@@ -118,10 +124,10 @@ func TestUpdateHandler(t *testing.T) {
 				value: "invalid value",
 			},
 			want: want{
-				alert: entity.Alert{},
+				alert: testAlert{},
 				code:  http.StatusBadRequest,
 			},
-			fields: map[string]entity.Alert{},
+			fields: map[string]testAlert{},
 		},
 		{
 			name: "negative counter invalid case value",
@@ -131,10 +137,10 @@ func TestUpdateHandler(t *testing.T) {
 				value: "invalid value",
 			},
 			want: want{
-				alert: entity.Alert{},
+				alert: testAlert{},
 				code:  http.StatusBadRequest,
 			},
-			fields: map[string]entity.Alert{},
+			fields: map[string]testAlert{},
 		},
 		{
 			name: "replace gauge type to counter",
@@ -143,18 +149,18 @@ func TestUpdateHandler(t *testing.T) {
 				name:  "alert",
 				value: "1",
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "gauge",
-					Name:  "alert",
-					Value: 1.32,
+					Type:       "gauge",
+					Name:       "alert",
+					FloatValue: 1.32,
 				},
 			},
 			want: want{
-				alert: entity.Alert{
-					Type:  "counter",
-					Name:  "alert",
-					Value: int64(1),
+				alert: testAlert{
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(1),
 				},
 				code: http.StatusOK,
 			},
@@ -166,18 +172,18 @@ func TestUpdateHandler(t *testing.T) {
 				name:  "alert",
 				value: "1.15",
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "counter",
-					Name:  "alert",
-					Value: 1,
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(1),
 				},
 			},
 			want: want{
-				alert: entity.Alert{
-					Type:  "gauge",
-					Name:  "alert",
-					Value: 1.15,
+				alert: testAlert{
+					Type:       "gauge",
+					Name:       "alert",
+					FloatValue: 1.15,
 				},
 				code: http.StatusOK,
 			},
@@ -198,7 +204,19 @@ func TestUpdateHandler(t *testing.T) {
 			require.NoError(t, err)
 			writer := httptest.NewRecorder()
 			repo := storage.NewInMemoryStorage()
-			for name, alert := range tt.fields {
+			for name, tAlert := range tt.fields {
+				alert := entity.Alert{
+					Type: tAlert.Type,
+					Name: tAlert.Name,
+				}
+				if tAlert.FloatValue != 0 {
+					floatValue := tAlert.FloatValue
+					alert.FloatValue = &floatValue
+				}
+				if tAlert.IntValue != 0 {
+					intValue := tAlert.IntValue
+					alert.IntValue = &intValue
+				}
 				repo.Save(name, alert)
 			}
 
@@ -215,7 +233,19 @@ func TestUpdateHandler(t *testing.T) {
 			addedAlert, err := repo.Get(tt.query.name)
 			assert.NoError(t, err)
 
-			assert.Equal(t, addedAlert, tt.want.alert)
+			wantAlert := entity.Alert{
+				Type: tt.want.alert.Type,
+				Name: tt.want.alert.Name,
+			}
+			if tt.want.alert.FloatValue != 0 {
+				floatValue := tt.want.alert.FloatValue
+				wantAlert.FloatValue = &floatValue
+			}
+			if tt.want.alert.IntValue != 0 {
+				intValue := tt.want.alert.IntValue
+				wantAlert.IntValue = &intValue
+			}
+			assert.Equal(t, addedAlert, wantAlert)
 		})
 	}
 }

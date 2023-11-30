@@ -10,6 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type testAlert struct {
+	Type       string
+	Name       string
+	FloatValue float64
+	IntValue   int64
+}
+
 func Test_addAlert(t *testing.T) {
 	type args struct {
 		repo *storage.InMemoryStorage
@@ -18,9 +25,9 @@ func Test_addAlert(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		fields  map[string]entity.Alert
+		fields  map[string]testAlert
 		wantErr bool
-		want    entity.Alert
+		want    testAlert
 	}{
 		{
 			name: "success counter empty storage case",
@@ -32,12 +39,12 @@ func Test_addAlert(t *testing.T) {
 					Data: "10",
 				},
 			},
-			fields:  map[string]entity.Alert{},
+			fields:  map[string]testAlert{},
 			wantErr: false,
-			want: entity.Alert{
-				Type:  "counter",
-				Name:  "alert",
-				Value: int64(10),
+			want: testAlert{
+				Type:     "counter",
+				Name:     "alert",
+				IntValue: int64(10),
 			},
 		},
 		{
@@ -50,18 +57,18 @@ func Test_addAlert(t *testing.T) {
 					Data: "10",
 				},
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "counter",
-					Name:  "alert",
-					Value: int64(20),
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(20),
 				},
 			},
 			wantErr: false,
-			want: entity.Alert{
-				Type:  "counter",
-				Name:  "alert",
-				Value: int64(30),
+			want: testAlert{
+				Type:     "counter",
+				Name:     "alert",
+				IntValue: int64(30),
 			},
 		},
 		{
@@ -74,12 +81,12 @@ func Test_addAlert(t *testing.T) {
 					Data: "1.1",
 				},
 			},
-			fields:  map[string]entity.Alert{},
+			fields:  map[string]testAlert{},
 			wantErr: false,
-			want: entity.Alert{
-				Type:  "gauge",
-				Name:  "alert",
-				Value: 1.1,
+			want: testAlert{
+				Type:       "gauge",
+				Name:       "alert",
+				FloatValue: 1.1,
 			},
 		},
 		{
@@ -92,18 +99,18 @@ func Test_addAlert(t *testing.T) {
 					Data: "1.2",
 				},
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "gauge",
-					Name:  "alert",
-					Value: 1.1,
+					Type:       "gauge",
+					Name:       "alert",
+					FloatValue: 1.1,
 				},
 			},
 			wantErr: false,
-			want: entity.Alert{
-				Type:  "gauge",
-				Name:  "alert",
-				Value: 1.2,
+			want: testAlert{
+				Type:       "gauge",
+				Name:       "alert",
+				FloatValue: 1.2,
 			},
 		},
 		{
@@ -116,9 +123,9 @@ func Test_addAlert(t *testing.T) {
 					Data: "invalid value",
 				},
 			},
-			fields:  map[string]entity.Alert{},
+			fields:  map[string]testAlert{},
 			wantErr: true,
-			want:    entity.Alert{},
+			want:    testAlert{},
 		},
 		{
 			name: "negative counter invalid value case",
@@ -130,15 +137,15 @@ func Test_addAlert(t *testing.T) {
 					Data: "invalid data",
 				},
 			},
-			fields:  map[string]entity.Alert{},
+			fields:  map[string]testAlert{},
 			wantErr: true,
-			want:    entity.Alert{},
+			want:    testAlert{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				tt.args.repo.Save(name, alert)
+				tt.args.repo.Save(name, newAlertFromTestAlert(alert))
 			}
 
 			_, err := AddAlert(tt.args.repo, tt.args.dto)
@@ -151,7 +158,7 @@ func Test_addAlert(t *testing.T) {
 
 			addedAlert, addAlertErr := tt.args.repo.Get(tt.args.dto.Name)
 			require.NoError(t, addAlertErr)
-			assert.Equal(t, addedAlert, tt.want)
+			assert.Equal(t, addedAlert, newAlertFromTestAlert(tt.want))
 		})
 	}
 }
@@ -164,9 +171,9 @@ func Test_updateCounterAlert(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		fields  map[string]entity.Alert
+		fields  map[string]testAlert
 		wantErr bool
-		want    entity.Alert
+		want    testAlert
 	}{
 		{
 			name: "success case with empty storage",
@@ -178,12 +185,12 @@ func Test_updateCounterAlert(t *testing.T) {
 				},
 				repo: storage.NewInMemoryStorage(),
 			},
-			fields:  map[string]entity.Alert{},
+			fields:  map[string]testAlert{},
 			wantErr: false,
-			want: entity.Alert{
-				Type:  "counter",
-				Name:  "alert",
-				Value: int64(10),
+			want: testAlert{
+				Type:     "counter",
+				Name:     "alert",
+				IntValue: int64(10),
 			},
 		},
 		{
@@ -196,18 +203,18 @@ func Test_updateCounterAlert(t *testing.T) {
 				},
 				repo: storage.NewInMemoryStorage(),
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "counter",
-					Name:  "alert",
-					Value: int64(10),
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(10),
 				},
 			},
 			wantErr: false,
-			want: entity.Alert{
-				Type:  "counter",
-				Name:  "alert",
-				Value: int64(20),
+			want: testAlert{
+				Type:     "counter",
+				Name:     "alert",
+				IntValue: int64(20),
 			},
 		},
 		{
@@ -220,15 +227,15 @@ func Test_updateCounterAlert(t *testing.T) {
 				},
 				repo: storage.NewInMemoryStorage(),
 			},
-			fields:  map[string]entity.Alert{},
+			fields:  map[string]testAlert{},
 			wantErr: true,
-			want:    entity.Alert{},
+			want:    testAlert{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				tt.args.repo.Save(name, alert)
+				tt.args.repo.Save(name, newAlertFromTestAlert(alert))
 			}
 
 			_, err := updateCounterAlert(tt.args.dto, tt.args.repo)
@@ -240,7 +247,7 @@ func Test_updateCounterAlert(t *testing.T) {
 			}
 			updatedAlert, getAlertErr := tt.args.repo.Get(tt.args.dto.Name)
 			require.NoError(t, getAlertErr)
-			assert.Equal(t, updatedAlert, tt.want)
+			assert.Equal(t, updatedAlert, newAlertFromTestAlert(tt.want))
 		})
 	}
 }
@@ -254,7 +261,7 @@ func Test_updateGaugeAlert(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    entity.Alert
+		want    testAlert
 	}{
 		{
 			name: "positive test",
@@ -267,10 +274,10 @@ func Test_updateGaugeAlert(t *testing.T) {
 				repository: storage.NewInMemoryStorage(),
 			},
 			wantErr: false,
-			want: entity.Alert{
-				Type:  "gauge",
-				Name:  "alert",
-				Value: 1.12,
+			want: testAlert{
+				Type:       "gauge",
+				Name:       "alert",
+				FloatValue: 1.12,
 			},
 		},
 		{
@@ -284,10 +291,10 @@ func Test_updateGaugeAlert(t *testing.T) {
 				repository: storage.NewInMemoryStorage(),
 			},
 			wantErr: false,
-			want: entity.Alert{
-				Type:  "gauge",
-				Name:  "alert",
-				Value: 1.0,
+			want: testAlert{
+				Type:       "gauge",
+				Name:       "alert",
+				FloatValue: 1.0,
 			},
 		},
 		{
@@ -301,7 +308,7 @@ func Test_updateGaugeAlert(t *testing.T) {
 				repository: storage.NewInMemoryStorage(),
 			},
 			wantErr: true,
-			want:    entity.Alert{},
+			want:    testAlert{},
 		},
 	}
 	for _, tt := range tests {
@@ -315,7 +322,24 @@ func Test_updateGaugeAlert(t *testing.T) {
 			}
 			expectedAlert, getAlertError := tt.args.repository.Get(tt.args.dto.Name)
 			require.NoError(t, getAlertError)
-			assert.Equal(t, tt.want, expectedAlert)
+			assert.Equal(t, newAlertFromTestAlert(tt.want), expectedAlert)
 		})
 	}
+}
+
+func newAlertFromTestAlert(testAlert testAlert) entity.Alert {
+	wantAlert := entity.Alert{
+		Type: testAlert.Type,
+		Name: testAlert.Name,
+	}
+	if testAlert.FloatValue != 0 {
+		floatValue := testAlert.FloatValue
+		wantAlert.FloatValue = &floatValue
+	}
+	if testAlert.IntValue != 0 {
+		intValue := testAlert.IntValue
+		wantAlert.IntValue = &intValue
+	}
+
+	return wantAlert
 }

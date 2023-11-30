@@ -84,8 +84,8 @@ func updateCounterAlert(dto dto.UpdateAlertDTO, repo UpdateStorage) (*entity.Ale
 		return &newAlert, nil
 	}
 
-	newValue := oldAlert.Value.(int64) + alert.Value.(int64)
-	alert.Value = newValue
+	newValue := *oldAlert.IntValue + *alert.IntValue
+	alert.IntValue = &newValue
 
 	if err := repo.Update(dto.Name, alert); err != nil {
 		return nil, fmt.Errorf(failedUpdateCounterPattern, err)

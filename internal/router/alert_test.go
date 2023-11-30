@@ -20,6 +20,13 @@ func TestAlertRouter(t *testing.T) {
 	ts := httptest.NewServer(AlertRouter(strg))
 	defer ts.Close()
 
+	type testAlert struct {
+		Type       string
+		Name       string
+		FloatValue float64
+		IntValue   int64
+	}
+
 	type want struct {
 		status int
 		body   string
@@ -29,17 +36,17 @@ func TestAlertRouter(t *testing.T) {
 		name        string
 		url         string
 		method      string
-		fields      map[string]entity.Alert
+		fields      map[string]testAlert
 		want        want
 		requestBody string
 	}{
 		{
 			name: "index success case",
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "counter",
-					Name:  "alert",
-					Value: int64(1),
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(1),
 				},
 			},
 			url: "/",
@@ -53,11 +60,11 @@ func TestAlertRouter(t *testing.T) {
 			name:   "show success case",
 			url:    "/value/counter/alert",
 			method: http.MethodGet,
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "counter",
-					Name:  "alert",
-					Value: int64(1),
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(1),
 				},
 			},
 			want: want{
@@ -68,7 +75,7 @@ func TestAlertRouter(t *testing.T) {
 			name:   "negative show case",
 			url:    "/value/counter/alert1",
 			method: http.MethodGet,
-			fields: map[string]entity.Alert{},
+			fields: map[string]testAlert{},
 			want: want{
 				status: http.StatusNotFound,
 			},
@@ -116,11 +123,11 @@ func TestAlertRouter(t *testing.T) {
 			name:   "update json counter success case",
 			url:    "/update",
 			method: http.MethodPost,
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Value: int64(1),
-					Type:  "counter",
-					Name:  "alert",
+					IntValue: int64(1),
+					Type:     "counter",
+					Name:     "alert",
 				},
 			},
 			want: want{
@@ -199,11 +206,11 @@ func TestAlertRouter(t *testing.T) {
 			name:   "show json success counter case",
 			url:    "/value",
 			method: http.MethodPost,
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Value: int64(1),
-					Type:  "counter",
-					Name:  "alert",
+					IntValue: int64(1),
+					Type:     "counter",
+					Name:     "alert",
 				},
 			},
 			want: want{
@@ -216,11 +223,11 @@ func TestAlertRouter(t *testing.T) {
 			name:   "show json success gauge case",
 			url:    "/value",
 			method: http.MethodPost,
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Value: 1.1,
-					Type:  "gauge",
-					Name:  "alert",
+					FloatValue: 1.1,
+					Type:       "gauge",
+					Name:       "alert",
 				},
 			},
 			want: want{
@@ -277,7 +284,19 @@ func TestAlertRouter(t *testing.T) {
 
 	for _, tt := range testTable {
 		t.Run(tt.name, func(t *testing.T) {
-			for name, alert := range tt.fields {
+			for name, tAlert := range tt.fields {
+				alert := entity.Alert{
+					Type: tAlert.Type,
+					Name: tAlert.Name,
+				}
+				if tAlert.FloatValue != 0 {
+					floatValue := tAlert.FloatValue
+					alert.FloatValue = &floatValue
+				}
+				if tAlert.IntValue != 0 {
+					intValue := tAlert.IntValue
+					alert.IntValue = &intValue
+				}
 				strg.Save(name, alert)
 			}
 			resp, responseBody := testRequest(t, ts, tt.method, tt.url, tt.requestBody)

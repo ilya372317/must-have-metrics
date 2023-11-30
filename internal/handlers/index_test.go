@@ -12,6 +12,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type TestAlert struct {
+	Type       string
+	Name       string
+	FloatValue float64
+	IntValue   int64
+}
+
 func TestIndexHandler(t *testing.T) {
 	type want struct {
 		response string
@@ -20,7 +27,7 @@ func TestIndexHandler(t *testing.T) {
 	tests := []struct {
 		name   string
 		want   want
-		fields map[string]entity.Alert
+		fields map[string]TestAlert
 	}{
 		{
 			name: "success test case",
@@ -29,7 +36,7 @@ func TestIndexHandler(t *testing.T) {
 					"    <title>Some awesome metrics</title>\n</head>\n<section>\n    <ul>\n        \n    </ul>\n</section>\n</html>",
 				code: http.StatusOK,
 			},
-			fields: map[string]entity.Alert{},
+			fields: map[string]TestAlert{},
 		},
 		{
 			name: "success test case with fields",
@@ -40,16 +47,16 @@ func TestIndexHandler(t *testing.T) {
 					"       \n    </ul>\n</section>\n</html>",
 				code: http.StatusOK,
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]TestAlert{
 				"alert1": {
-					Type:  "counter",
-					Name:  "alert1",
-					Value: int64(100),
+					Type:     "counter",
+					Name:     "alert1",
+					IntValue: int64(100),
 				},
 				"alert2": {
-					Type:  "gauge",
-					Name:  "alert2",
-					Value: 2.33434,
+					Type:       "gauge",
+					Name:       "alert2",
+					FloatValue: 2.33434,
 				},
 			},
 		},
@@ -57,7 +64,19 @@ func TestIndexHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			strg := storage.NewInMemoryStorage()
-			for name, alert := range tt.fields {
+			for name, tAlert := range tt.fields {
+				alert := entity.Alert{
+					Type: tAlert.Type,
+					Name: tAlert.Name,
+				}
+				if tAlert.FloatValue != 0 {
+					floatValue := tAlert.FloatValue
+					alert.FloatValue = &floatValue
+				}
+				if tAlert.IntValue != 0 {
+					intValue := tAlert.IntValue
+					alert.IntValue = &intValue
+				}
 				strg.Save(name, alert)
 			}
 

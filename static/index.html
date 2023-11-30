@@ -7,7 +7,7 @@
 <section>
     <ul>
         {{range $alert := .}}
-        <li>{{$alert.Name}}: {{$alert.Value}}</li>
+        <li>{{$alert.Name}}: {{$alert.GetValue}}</li>
         {{end}}
     </ul>
 </section>

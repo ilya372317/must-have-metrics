@@ -28,17 +28,10 @@ func CreateMetricsDTOFromRequest(r *http.Request) (Metrics, error) {
 }
 
 func CreateMetricsDTOFromAlert(alert entity.Alert) Metrics {
-	result := Metrics{
+	return Metrics{
 		ID:    alert.Name,
 		MType: alert.Type,
+		Delta: alert.IntValue,
+		Value: alert.FloatValue,
 	}
-	if alert.Type == entity.TypeCounter {
-		value, _ := alert.Value.(int64)
-		result.Delta = &value
-	} else {
-		value, _ := alert.Value.(float64)
-		result.Value = &value
-	}
-
-	return result
 }

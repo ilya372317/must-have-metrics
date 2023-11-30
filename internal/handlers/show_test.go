@@ -15,6 +15,12 @@ import (
 )
 
 func TestShowHandler(t *testing.T) {
+	type testAlert struct {
+		Type       string
+		Name       string
+		FloatValue float64
+		IntValue   int64
+	}
 	type want struct {
 		response string
 		code     int
@@ -27,7 +33,7 @@ func TestShowHandler(t *testing.T) {
 	tests := []struct {
 		name   string
 		want   want
-		fields map[string]entity.Alert
+		fields map[string]testAlert
 		args   args
 	}{
 		{
@@ -36,11 +42,11 @@ func TestShowHandler(t *testing.T) {
 				response: "1",
 				code:     http.StatusOK,
 			},
-			fields: map[string]entity.Alert{
+			fields: map[string]testAlert{
 				"alert": {
-					Type:  "counter",
-					Name:  "alert",
-					Value: 1,
+					Type:     "counter",
+					Name:     "alert",
+					IntValue: int64(1),
 				},
 			},
 			args: args{
@@ -54,7 +60,7 @@ func TestShowHandler(t *testing.T) {
 				response: "alert not found\n",
 				code:     http.StatusNotFound,
 			},
-			fields: map[string]entity.Alert{},
+			fields: map[string]testAlert{},
 			args: args{
 				typ:  "counter",
 				name: "alert",
@@ -64,7 +70,19 @@ func TestShowHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			strg := storage.NewInMemoryStorage()
-			for name, alert := range tt.fields {
+			for name, tAlert := range tt.fields {
+				alert := entity.Alert{
+					Type: tAlert.Type,
+					Name: tAlert.Name,
+				}
+				if tAlert.FloatValue != 0 {
+					floatValue := tAlert.FloatValue
+					alert.FloatValue = &floatValue
+				}
+				if tAlert.IntValue != 0 {
+					intValue := tAlert.IntValue
+					alert.IntValue = &intValue
+				}
 				strg.Save(name, alert)
 			}
 			rctx := chi.NewRouteContext()

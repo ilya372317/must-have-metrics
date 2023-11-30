@@ -25,7 +25,7 @@ func ShowHandler(strg ShowStorage) http.HandlerFunc {
 			return
 		}
 
-		if _, err := fmt.Fprintf(w, "%v", alert.Value); err != nil {
+		if _, err := fmt.Fprintf(w, "%v", alert.GetValue()); err != nil {
 			log.Println(err)
 		}
 	}
