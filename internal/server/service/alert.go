@@ -37,19 +37,19 @@ func AddAlert(
 		if err != nil {
 			return nil, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 		}
-		break
 	case entity.TypeCounter:
 		alert, err = updateCounterAlert(dto, repo)
 		if err != nil {
 			return nil, fmt.Errorf(failedUpdateCounterPattern, err)
 		}
-		break
 	default:
 		return nil, errors.New("invalid type of metric")
 	}
 
-	if err = StoreToFilesystem(repo, serverConfig.FilePath); err != nil {
-		return nil, fmt.Errorf("failed save data to filesystem: %w", err)
+	if serverConfig.StoreInterval == 0 {
+		if err = StoreToFilesystem(repo, serverConfig.FilePath); err != nil {
+			return nil, fmt.Errorf("failed save data to filesystem: %w", err)
+		}
 	}
 
 	return alert, nil
