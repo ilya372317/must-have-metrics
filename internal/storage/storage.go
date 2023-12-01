@@ -1,16 +1,10 @@
 package storage
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"os"
 	"sync"
 
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
-
-const filePermission = 0600
 
 type AlertNotFoundError struct{}
 
@@ -64,36 +58,14 @@ func (storage *InMemoryStorage) All() []entity.Alert {
 	return values
 }
 
+func (storage *InMemoryStorage) AllWithKeys() map[string]entity.Alert {
+	return storage.Records
+}
+
+func (storage *InMemoryStorage) Fill(alerts map[string]entity.Alert) {
+	storage.Records = alerts
+}
+
 func (storage *InMemoryStorage) Reset() {
 	storage.Records = make(map[string]entity.Alert)
-}
-
-func (storage *InMemoryStorage) FillFromFilesystem(filePath string) error {
-	if filePath == "" {
-		return errors.New("no need to save data in filesystem")
-	}
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return fmt.Errorf("failed fill storage from file system: %w", err)
-	}
-
-	if err = json.Unmarshal(data, storage); err != nil {
-		return fmt.Errorf("metrics in file is invalid: %w", err)
-	}
-
-	return nil
-}
-
-func (storage *InMemoryStorage) StoreToFilesystem(filepath string) error {
-	storage.Lock()
-	data, err := json.Marshal(storage)
-	if err != nil {
-		return fmt.Errorf("failed serialize metrics: %w", err)
-	}
-	if err = os.WriteFile(filepath, data, filePermission); err != nil {
-		return fmt.Errorf("failed save file on disk: %w", err)
-	}
-	storage.Unlock()
-
-	return nil
 }

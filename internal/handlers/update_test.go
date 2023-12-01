@@ -7,11 +7,19 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var serverConfig = &config.ServerConfig{
+	Host:          "localhost:8080",
+	FilePath:      "/tmp/metrics.json",
+	Restore:       true,
+	StoreInterval: 300,
+}
 
 func TestUpdateHandler(t *testing.T) {
 	type testAlert struct {
@@ -220,7 +228,7 @@ func TestUpdateHandler(t *testing.T) {
 				repo.Save(name, alert)
 			}
 
-			handler := UpdateHandler(repo)
+			handler := UpdateHandler(repo, serverConfig)
 			handler(writer, request)
 			res := writer.Result()
 			defer res.Body.Close() //nolint //conflicts with practicum static tests

@@ -1,14 +1,24 @@
 package service
 
 import (
+	"os"
+	"sort"
 	"testing"
 
+	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var serverConfig = &config.ServerConfig{
+	Host:          "localhost:8080",
+	FilePath:      "/tmp/metrics.json",
+	Restore:       true,
+	StoreInterval: 300,
+}
 
 type testAlert struct {
 	Type       string
@@ -148,7 +158,7 @@ func Test_addAlert(t *testing.T) {
 				tt.args.repo.Save(name, newAlertFromTestAlert(alert))
 			}
 
-			_, err := AddAlert(tt.args.repo, tt.args.dto)
+			_, err := AddAlert(tt.args.repo, tt.args.dto, serverConfig)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -342,4 +352,98 @@ func newAlertFromTestAlert(testAlert testAlert) entity.Alert {
 	}
 
 	return wantAlert
+}
+
+func Test_FillAndSaveFromFile(t *testing.T) {
+	tests := []struct {
+		name           string
+		items          []testAlert
+		filepath       string
+		wantFillErr    bool
+		wantRestoreErr bool
+	}{
+		{
+			name:           "success empty storage case",
+			items:          nil,
+			filepath:       "test-metrics.json",
+			wantFillErr:    false,
+			wantRestoreErr: false,
+		},
+		{
+			name: "success complex case",
+			items: []testAlert{
+				{
+					FloatValue: 1.1,
+					Type:       "gauge",
+					Name:       "alert1",
+				},
+				{
+					IntValue: int64(1),
+					Type:     "counter",
+					Name:     "alert2",
+				},
+				{
+					FloatValue: 1.234567,
+					Type:       "gauge",
+					Name:       "alert3",
+				},
+				{
+					IntValue: int64(123456),
+					Type:     "counter",
+					Name:     "alert4",
+				},
+			},
+			filepath:       "test-metrics.json",
+			wantFillErr:    false,
+			wantRestoreErr: false,
+		},
+		{
+			name:           "negative empty file path case",
+			items:          nil,
+			filepath:       "",
+			wantFillErr:    true,
+			wantRestoreErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		memoryStorage := storage.NewInMemoryStorage()
+		t.Run(tt.name, func(t *testing.T) {
+			for _, alert := range tt.items {
+				memoryStorage.Save(alert.Name, newAlertFromTestAlert(alert))
+			}
+
+			errStore := StoreToFilesystem(memoryStorage, tt.filepath)
+			if tt.wantFillErr {
+				assert.Error(t, errStore)
+				return
+			} else {
+				require.NoError(t, errStore)
+			}
+			expect := memoryStorage.All()
+
+			memoryStorage.Reset()
+
+			errFill := FillFromFilesystem(memoryStorage, tt.filepath)
+			if tt.wantRestoreErr {
+				assert.Error(t, errFill)
+				return
+			} else {
+				require.NoError(t, errFill)
+			}
+
+			got := memoryStorage.All()
+			sort.SliceStable(expect, func(i, j int) bool {
+				return expect[i].Name > expect[j].Name
+			})
+			sort.SliceStable(got, func(i, j int) bool {
+				return got[i].Name > got[j].Name
+			})
+
+			assert.Equal(t, expect, got)
+
+			_ = os.Remove(tt.filepath)
+			memoryStorage.Reset()
+		})
+	}
 }

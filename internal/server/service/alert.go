@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
@@ -19,26 +20,39 @@ type UpdateStorage interface {
 	Update(name string, alert entity.Alert) error
 	Get(name string) (entity.Alert, error)
 	Has(name string) bool
+	AllWithKeys() map[string]entity.Alert
+	Fill(map[string]entity.Alert)
 }
 
-func AddAlert(repo UpdateStorage, dto dto.UpdateAlertDTO) (*entity.Alert, error) {
+func AddAlert(
+	repo UpdateStorage,
+	dto dto.UpdateAlertDTO,
+	serverConfig *config.ServerConfig,
+) (*entity.Alert, error) {
+	var alert *entity.Alert
+	var err error
 	switch dto.Type {
 	case entity.TypeGauge:
-		alert, err := updateGaugeAlert(dto, repo)
+		alert, err = updateGaugeAlert(dto, repo)
 		if err != nil {
 			return nil, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 		}
-		return alert, nil
+		break
 	case entity.TypeCounter:
-		alert, err := updateCounterAlert(dto, repo)
+		alert, err = updateCounterAlert(dto, repo)
 		if err != nil {
 			return nil, fmt.Errorf(failedUpdateCounterPattern, err)
 		}
-		return alert, nil
-
+		break
 	default:
 		return nil, errors.New("invalid type of metric")
 	}
+
+	if err = StoreToFilesystem(repo, serverConfig.FilePath); err != nil {
+		return nil, fmt.Errorf("failed save data to filesystem: %w", err)
+	}
+
+	return alert, nil
 }
 
 func updateGaugeAlert(dto dto.UpdateAlertDTO, repository UpdateStorage) (*entity.Alert, error) {

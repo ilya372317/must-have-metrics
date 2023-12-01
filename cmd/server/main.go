@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
@@ -31,14 +30,10 @@ func run() error {
 		sLogger.Panicf("failed get server config: %v", err)
 	}
 	if cnfg.StoreInterval > 0 {
-		go service.SaveDataToFilesystemByInterval(
-			time.Duration(cnfg.StoreInterval)*time.Second,
-			cnfg.FilePath,
-			repository,
-		)
+		go service.SaveDataToFilesystemByInterval(cnfg, repository)
 	}
 	if cnfg.Restore {
-		if err = repository.FillFromFilesystem(cnfg.FilePath); err != nil {
+		if err = service.FillFromFilesystem(repository, cnfg.FilePath); err != nil {
 			sLogger.Warn(err)
 		}
 	}

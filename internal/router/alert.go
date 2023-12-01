@@ -16,25 +16,24 @@ type AlertStorage interface {
 	Get(name string) (entity.Alert, error)
 	Has(name string) bool
 	All() []entity.Alert
-	StoreToFilesystem(filepath string) error
+	AllWithKeys() map[string]entity.Alert
+	Fill(map[string]entity.Alert)
 }
 
-func AlertRouter(repository AlertStorage, cnfg *config.Config) *chi.Mux {
+func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.WithLogging())
 	router.Use(middleware.Compressed())
 	router.Get("/", handlers.IndexHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
-		r.Use(middleware.SaveMetricsInFile(repository, cnfg))
-		r.Post("/", handlers.UpdateJSONHandler(repository))
+		r.Post("/", handlers.UpdateJSONHandler(repository, serverConfig))
 	})
 	router.Route("/value", func(r chi.Router) {
 		r.Post("/", handlers.ShowJSONHandler(repository))
 	})
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
-		r.Use(middleware.SaveMetricsInFile(repository, cnfg))
-		r.Post("/", handlers.UpdateHandler(repository))
+		r.Post("/", handlers.UpdateHandler(repository, serverConfig))
 	})
 	router.Route("/value/{type}/{name}", func(r chi.Router) {
 		r.Get("/", handlers.ShowHandler(repository))

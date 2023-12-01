@@ -16,10 +16,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var cnfg = &config.ServerConfig{
+	Host:          "localhost:8080",
+	FilePath:      "/tmp/metrics.json",
+	Restore:       true,
+	StoreInterval: 300,
+}
+
 func TestAlertRouter(t *testing.T) {
 	strg := storage.NewInMemoryStorage()
-	cnfg, err := config.NewServer()
-	require.NoError(t, err)
 	ts := httptest.NewServer(AlertRouter(strg, cnfg))
 	defer ts.Close()
 

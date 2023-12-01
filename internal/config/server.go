@@ -7,15 +7,15 @@ import (
 	"github.com/caarlos0/env"
 )
 
-type Config struct {
+type ServerConfig struct {
 	Host          string `env:"ADDRESS"`
 	FilePath      string `env:"FILE_STORAGE_PATH"`
 	Restore       bool   `env:"RESTORE"`
 	StoreInterval uint   `env:"STORE_INTERVAL"`
 }
 
-func NewServer() (*Config, error) {
-	cnfg := &Config{}
+func NewServer() (*ServerConfig, error) {
+	cnfg := &ServerConfig{}
 	cnfg.parseFlags()
 	err := env.Parse(cnfg)
 	if err != nil {
@@ -24,7 +24,7 @@ func NewServer() (*Config, error) {
 	return cnfg, nil
 }
 
-func (c *Config) parseFlags() {
+func (c *ServerConfig) parseFlags() {
 	flag.StringVar(
 		&c.Host, "a",
 		"localhost:8080", "address where server will listen requests",
