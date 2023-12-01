@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"net/http"
 
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/utils/compress"
-	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 )
 
 const failedSaveDataErrPattern = "failed to save data on server: %v\n"

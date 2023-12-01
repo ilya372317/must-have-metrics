@@ -6,7 +6,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
 	"github.com/ilya372317/must-have-metrics/internal/client/statistic"
 	"github.com/ilya372317/must-have-metrics/internal/config"
-	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
 
 var (

@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/ilya372317/must-have-metrics/internal/dto"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
-	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 )
 
 const (

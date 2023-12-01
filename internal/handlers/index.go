@@ -7,8 +7,9 @@ import (
 	"sort"
 
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
-	"github.com/ilya372317/must-have-metrics/internal/utils"
 )
+
+const basePath = "../.."
 
 type IndexStorage interface {
 	All() []entity.Alert
@@ -21,7 +22,7 @@ func IndexHandler(strg IndexStorage) http.HandlerFunc {
 		sort.SliceStable(allAlerts, func(i, j int) bool {
 			return allAlerts[i].Name < allAlerts[j].Name
 		})
-		tmpl, err := template.ParseFiles(utils.BasePath() + "/static" + "/index.html")
+		tmpl, err := template.ParseFiles(basePath + "/static" + "/index.html")
 		if err != nil {
 			http.Error(writer, fmt.Sprintf("internal server error: %s", err.Error()), http.StatusInternalServerError)
 			return

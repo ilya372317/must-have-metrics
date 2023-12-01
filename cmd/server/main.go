@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/router"
 	"github.com/ilya372317/must-have-metrics/internal/server/service"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
-	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
 	"github.com/joho/godotenv"
 )
 

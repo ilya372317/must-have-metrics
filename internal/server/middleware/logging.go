@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
 
 var sLogger = logger.Get()

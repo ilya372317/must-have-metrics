@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
 
 const (

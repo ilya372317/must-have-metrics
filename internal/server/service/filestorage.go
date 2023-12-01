@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	"github.com/ilya372317/must-have-metrics/internal/utils/logger"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
 
 type FilesystemSupportStorage interface {
