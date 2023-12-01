@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ilya372317/must-have-metrics/internal/utils"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +23,7 @@ func Get() *zap.SugaredLogger {
 	}
 	createLogFolderIfNotExists()
 	environment := os.Getenv("ENV")
-	path := basePath + "/" + logPath
+	path := utils.BasePath() + "/" + logPath
 	if environment == "prod" {
 		cnfg := zap.NewProductionConfig()
 		cnfg.OutputPaths = []string{path, "stdout"}
@@ -45,8 +46,8 @@ func Get() *zap.SugaredLogger {
 }
 
 func createLogFolderIfNotExists() {
-	if _, err := os.Stat(basePath + "/" + logFolder); os.IsNotExist(err) {
-		err = os.Mkdir(basePath+"/"+logFolder, logFilePermission)
+	if _, err := os.Stat(utils.BasePath() + "/" + logFolder); os.IsNotExist(err) {
+		err = os.Mkdir(utils.BasePath()+"/"+logFolder, logFilePermission)
 		if err != nil {
 			panic(fmt.Errorf("failed create log folder: %w", err))
 		}
