@@ -23,7 +23,7 @@ func Get() *zap.SugaredLogger {
 	}
 	createLogFolderIfNotExists()
 	environment := os.Getenv("ENV")
-	path := utils.BasePath() + "/" + logPath
+	path := utils.Root + "/" + logPath
 	if environment == "prod" {
 		cnfg := zap.NewProductionConfig()
 		cnfg.OutputPaths = []string{path, "stdout"}
@@ -46,8 +46,8 @@ func Get() *zap.SugaredLogger {
 }
 
 func createLogFolderIfNotExists() {
-	if _, err := os.Stat(utils.BasePath() + "/" + logFolder); os.IsNotExist(err) {
-		err = os.Mkdir(utils.BasePath()+"/"+logFolder, logFilePermission)
+	if _, err := os.Stat(utils.Root + "/" + logFolder); os.IsNotExist(err) {
+		err = os.Mkdir(utils.Root+"/"+logFolder, logFilePermission)
 		if err != nil {
 			panic(fmt.Errorf("failed create log folder: %w", err))
 		}

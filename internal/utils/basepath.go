@@ -5,7 +5,8 @@ import (
 	"runtime"
 )
 
-func BasePath() string {
-	_, b, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(b), "../..")
-}
+var (
+	_, b, _, _ = runtime.Caller(0)
+	// Root folder of this project
+	Root = filepath.Join(filepath.Dir(b), "../..")
+)
