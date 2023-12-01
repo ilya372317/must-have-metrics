@@ -1,44 +1,34 @@
 package config
 
 import (
+	"flag"
 	"fmt"
-	"sync"
+
+	"github.com/caarlos0/env"
 )
 
-var agentConfig *AgentConfig
-
 type AgentConfig struct {
-	parameters map[string]Parameter
-	sync.Mutex
+	Host           string `env:"ADDRESS"`
+	PollInterval   uint   `env:"POLL_INTERVAL"`
+	ReportInterval uint   `env:"REPORT_INTERVAL"`
 }
 
-func GetAgentConfig() (*AgentConfig, error) {
-	if agentConfig != nil {
-		return agentConfig, nil
-	}
-	agentConfig = newAgentConfig()
-	err := initConfiguration(agentConfig, false)
-	if err != nil {
-		agentConfig = nil
-		return nil, fmt.Errorf("failed get agent configuration: %w", err)
+func NewAgent() (*AgentConfig, error) {
+	agentConfig := &AgentConfig{}
+	agentConfig.parseFlags()
+	if err := env.Parse(agentConfig); err != nil {
+		return nil, fmt.Errorf("failed parse agent flags: %w", err)
 	}
 
 	return agentConfig, nil
 }
 
-func (a *AgentConfig) GetValue(alias string) string {
-	a.Mutex.Lock()
-	value := a.parameters[alias].GetValue()
-	a.Mutex.Unlock()
-	return value
-}
-
-func (a *AgentConfig) GetParameters() map[string]Parameter {
-	return a.parameters
-}
-
-func newAgentConfig() *AgentConfig {
-	return &AgentConfig{
-		parameters: agentParams,
-	}
+func (c *AgentConfig) parseFlags() {
+	flag.StringVar(
+		&c.Host, "a",
+		"localhost:8080", "address where server will listen requests",
+	)
+	flag.UintVar(&c.PollInterval, "p", 2, "interval agent collect metrics")
+	flag.UintVar(&c.ReportInterval, "r", 10, "interval agent send metrics on server")
+	flag.Parse()
 }

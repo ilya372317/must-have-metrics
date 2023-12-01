@@ -1,43 +1,41 @@
 package config
 
 import (
+	"flag"
 	"fmt"
-	"sync"
+
+	"github.com/caarlos0/env"
 )
 
-var serverConfig *ServerConfig
-
-type ServerConfig struct { //nolint:govet // how fix it i don`t now
-	sync.Mutex
-	parameters map[string]Parameter
+type Config struct {
+	Host          string `env:"ADDRESS"`
+	FilePath      string `env:"FILE_STORAGE_PATH"`
+	Restore       bool   `env:"RESTORE"`
+	StoreInterval uint   `env:"STORE_INTERVAL"`
 }
 
-func GetServerConfig() (*ServerConfig, error) {
-	if serverConfig != nil {
-		return serverConfig, nil
+func NewServer() (*Config, error) {
+	cnfg := &Config{}
+	cnfg.parseFlags()
+	err := env.Parse(cnfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed parse enviroment virables: %w", err)
 	}
-	serverConfig = newServerConfig()
-	if err := initConfiguration(serverConfig, true); err != nil {
-		serverConfig = nil
-		return nil, fmt.Errorf("failed init agent config: %w", err)
-	}
-
-	return serverConfig, nil
+	return cnfg, nil
 }
 
-func (s *ServerConfig) GetValue(alias string) string {
-	s.Mutex.Lock()
-	value := s.parameters[alias].GetValue()
-	s.Mutex.Unlock()
-	return value
-}
-
-func (s *ServerConfig) GetParameters() map[string]Parameter {
-	return s.parameters
-}
-
-func newServerConfig() *ServerConfig {
-	return &ServerConfig{
-		parameters: serverParams,
-	}
+func (c *Config) parseFlags() {
+	flag.StringVar(
+		&c.Host, "a",
+		"localhost:8080", "address where server will listen requests",
+	)
+	flag.StringVar(
+		&c.FilePath, "f",
+		"/tmp/metrics-db.json", "file path where metrics will be stored",
+	)
+	flag.BoolVar(&c.Restore, "r", true, "Restore data from file in start server or not")
+	flag.UintVar(&c.StoreInterval, "i", 300,
+		"interval saving metrics in file",
+	)
+	flag.Parse()
 }
