@@ -36,7 +36,7 @@ func CreateShowAlertDTOFromMetrics(metrics Metrics) ShowAlertDTO {
 }
 
 func (dto *ShowAlertDTO) Validate() (bool, error) {
-	isValid, err := validator.Validate(*dto)
+	isValid, err := validator.ValidateRequired(*dto)
 	if err != nil {
 		err = fmt.Errorf("show dto is invalid: %w", err)
 	}

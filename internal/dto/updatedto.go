@@ -55,7 +55,7 @@ func (dto *UpdateAlertDTO) Validate() (bool, error) {
 		}
 	}
 
-	isValid, err := validator.Validate(*dto)
+	isValid, err := validator.ValidateRequired(*dto)
 	if err != nil {
 		err = fmt.Errorf("update dto is invalid: %w", err)
 	}

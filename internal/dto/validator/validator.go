@@ -7,9 +7,9 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
-func Validate(dataTransferObject interface{}) (bool, error) {
-	registerCustomValidators()
-	govalidator.SetFieldsRequiredByDefault(true)
+func Validate(dataTransferObject interface{}, allFieldReq bool) (bool, error) {
+	govalidator.TagMap["stringisnumber"] = stringIsNumber
+	govalidator.SetFieldsRequiredByDefault(allFieldReq)
 	result, err := govalidator.ValidateStruct(dataTransferObject)
 	if err != nil {
 		err = fmt.Errorf("sturct is invalid: %w", err)
@@ -17,8 +17,8 @@ func Validate(dataTransferObject interface{}) (bool, error) {
 	return result, err
 }
 
-func registerCustomValidators() {
-	govalidator.TagMap["stringisnumber"] = stringIsNumber
+func ValidateRequired(dataTransferObject interface{}) (bool, error) {
+	return Validate(dataTransferObject, true)
 }
 
 func stringIsNumber(str string) bool {
