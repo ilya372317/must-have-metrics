@@ -1,30 +1,35 @@
 package storage
 
 import (
-	"errors"
+	"sync"
 
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-var errAlertNotFound = errors.New("alert not found")
+type AlertNotFoundError struct{}
 
-type InMemoryStorage struct {
-	records map[string]entity.Alert
+func (e *AlertNotFoundError) Error() string {
+	return "alert not found"
 }
 
-func MakeInMemoryStorage() *InMemoryStorage {
+type InMemoryStorage struct {
+	Records map[string]entity.Alert `json:"records"`
+	sync.Mutex
+}
+
+func NewInMemoryStorage() *InMemoryStorage {
 	return &InMemoryStorage{
-		records: make(map[string]entity.Alert),
+		Records: make(map[string]entity.Alert),
 	}
 }
 
 func (storage *InMemoryStorage) Save(name string, alert entity.Alert) {
-	storage.records[name] = alert
+	storage.Records[name] = alert
 }
 
 func (storage *InMemoryStorage) Update(name string, newValue entity.Alert) error {
 	if !storage.Has(name) {
-		return errAlertNotFound
+		return &AlertNotFoundError{}
 	}
 	storage.Save(name, newValue)
 
@@ -32,23 +37,35 @@ func (storage *InMemoryStorage) Update(name string, newValue entity.Alert) error
 }
 
 func (storage *InMemoryStorage) Get(name string) (entity.Alert, error) {
-	alert, ok := storage.records[name]
+	alert, ok := storage.Records[name]
 	if !ok {
-		return entity.Alert{}, errAlertNotFound
+		return entity.Alert{}, &AlertNotFoundError{}
 	}
 	return alert, nil
 }
 
 func (storage *InMemoryStorage) Has(name string) bool {
-	_, ok := storage.records[name]
+	_, ok := storage.Records[name]
 	return ok
 }
 
 func (storage *InMemoryStorage) All() []entity.Alert {
-	values := make([]entity.Alert, 0, len(storage.records))
-	for _, value := range storage.records {
+	values := make([]entity.Alert, 0, len(storage.Records))
+	for _, value := range storage.Records {
 		values = append(values, value)
 	}
 
 	return values
+}
+
+func (storage *InMemoryStorage) AllWithKeys() map[string]entity.Alert {
+	return storage.Records
+}
+
+func (storage *InMemoryStorage) Fill(alerts map[string]entity.Alert) {
+	storage.Records = alerts
+}
+
+func (storage *InMemoryStorage) Reset() {
+	storage.Records = make(map[string]entity.Alert)
 }

@@ -1,43 +1,49 @@
 package main
 
 import (
-	"flag"
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/router"
+	"github.com/ilya372317/must-have-metrics/internal/server/service"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
+	"github.com/joho/godotenv"
 )
 
-const defaultServerAddress = "localhost:8080"
-const staticFilePath = "static"
-
-var (
-	repository *storage.InMemoryStorage
-	host       *string
-)
-
-func init() {
-	repository = storage.MakeInMemoryStorage()
-	cnfg := new(config.ServerConfig)
-	if err := cnfg.Init(); err != nil {
-		log.Fatalln(err.Error())
-	}
-	host = flag.String("a", defaultServerAddress, "server address")
-
-	if cnfg.Host != "" {
-		host = &cnfg.Host
-	}
-}
+var sLogger = logger.Get()
 
 func main() {
-	flag.Parse()
 	if err := run(); err != nil {
-		log.Fatalf("failed to start server on address %s: %v", *host, err)
+		sLogger.Panicf("failed to start server: %v", err)
 	}
 }
 
 func run() error {
-	return http.ListenAndServe(*host, router.AlertRouter(repository, staticFilePath))
+	repository := storage.NewInMemoryStorage()
+	if err := godotenv.Load(".env-server"); err != nil {
+		logger.Get().Warnf("failed load .env-server file: %v", err)
+	}
+	cnfg, err := config.NewServer()
+	if err != nil {
+		sLogger.Panicf("failed get server config: %v", err)
+	}
+	if cnfg.StoreInterval > 0 {
+		go service.SaveDataToFilesystemByInterval(cnfg, repository)
+	}
+	if cnfg.Restore {
+		if err = service.FillFromFilesystem(repository, cnfg.FilePath); err != nil {
+			sLogger.Warn(err)
+		}
+	}
+	sLogger.Infof("server is starting...")
+	err = http.ListenAndServe(
+		cnfg.Host,
+		router.AlertRouter(repository, cnfg),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to start server: %w", err)
+	}
+	return nil
 }

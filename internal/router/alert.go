@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/handlers"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
@@ -15,22 +16,26 @@ type AlertStorage interface {
 	Get(name string) (entity.Alert, error)
 	Has(name string) bool
 	All() []entity.Alert
+	AllWithKeys() map[string]entity.Alert
+	Fill(map[string]entity.Alert)
 }
 
-func AlertRouter(repository AlertStorage, pathToFile string) *chi.Mux {
+func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
 	router := chi.NewRouter()
-	router.Get("/", handlers.IndexHandler(repository, pathToFile))
+	router.Use(middleware.WithLogging())
+	router.Use(middleware.Compressed())
+	router.Get("/", handlers.IndexHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
+	router.Route("/update", func(r chi.Router) {
+		r.Post("/", handlers.UpdateJSONHandler(repository, serverConfig))
+	})
+	router.Route("/value", func(r chi.Router) {
+		r.Post("/", handlers.ShowJSONHandler(repository))
+	})
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
-		r.Use(
-			middleware.TypeValidator(),
-			middleware.NameValidator(),
-			middleware.ValueValidator(),
-		)
-		r.Post("/", handlers.UpdateHandler(repository))
+		r.Post("/", handlers.UpdateHandler(repository, serverConfig))
 	})
 	router.Route("/value/{type}/{name}", func(r chi.Router) {
-		r.Use(middleware.TypeValidator(), middleware.NameValidator())
 		r.Get("/", handlers.ShowHandler(repository))
 	})
 	return router
