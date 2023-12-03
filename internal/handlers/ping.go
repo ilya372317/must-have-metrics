@@ -20,10 +20,17 @@ func PingHandler(serverConfig *config.ServerConfig) http.HandlerFunc {
 		if err != nil {
 			http.Error(
 				writer,
-				fmt.Sprintf("Failed get connection to database: %s", err.Error()),
+				fmt.Sprintf("Failed open connection to database: %s", err.Error()),
 				http.StatusInternalServerError,
 			)
 			return
+		}
+		if pingErr := db.Ping(); pingErr != nil {
+			http.Error(
+				writer,
+				fmt.Sprintf("Failed ping connection to database: %s", pingErr.Error()),
+				http.StatusInternalServerError,
+			)
 		}
 		if err = db.Close(); err != nil {
 			pingLogger.Warnf("failed close connection with database: %v", err)

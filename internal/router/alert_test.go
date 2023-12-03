@@ -6,12 +6,15 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
+	"github.com/ilya372317/must-have-metrics/internal/utils"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,6 +27,9 @@ var cnfg = &config.ServerConfig{
 }
 
 func TestAlertRouter(t *testing.T) {
+	err := godotenv.Load(utils.Root + "/.env-server")
+	cnfg.DatabaseDSN = os.Getenv("DATABASE_DSN")
+	require.NoError(t, err)
 	strg := storage.NewInMemoryStorage()
 	ts := httptest.NewServer(AlertRouter(strg, cnfg))
 	defer ts.Close()
