@@ -288,6 +288,17 @@ func TestAlertRouter(t *testing.T) {
 			},
 			requestBody: "",
 		},
+		{
+			name:   "success ping request",
+			url:    "/ping",
+			method: http.MethodGet,
+			fields: nil,
+			want: want{
+				status: http.StatusOK,
+				body:   "",
+			},
+			requestBody: "",
+		},
 	}
 
 	for _, tt := range testTable {

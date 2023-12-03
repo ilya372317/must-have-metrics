@@ -12,6 +12,7 @@ type ServerConfig struct {
 	FilePath      string `env:"FILE_STORAGE_PATH"`
 	Restore       bool   `env:"RESTORE"`
 	StoreInterval uint   `env:"STORE_INTERVAL"`
+	DatabaseDSN   string `env:"DATABASE_DSN"`
 }
 
 func NewServer() (*ServerConfig, error) {
@@ -37,5 +38,6 @@ func (c *ServerConfig) parseFlags() {
 	flag.UintVar(&c.StoreInterval, "i", 300,
 		"interval saving metrics in file",
 	)
+	flag.StringVar(&c.DatabaseDSN, "d", "", "Database DSN string")
 	flag.Parse()
 }

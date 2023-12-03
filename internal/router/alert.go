@@ -25,6 +25,7 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 	router.Use(middleware.WithLogging())
 	router.Use(middleware.Compressed())
 	router.Get("/", handlers.IndexHandler(repository))
+	router.Get("/ping", handlers.PingHandler(serverConfig))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
 		r.Post("/", handlers.UpdateJSONHandler(repository, serverConfig))
