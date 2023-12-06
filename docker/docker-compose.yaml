@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: docker/server/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    volumes:
+      - ../storage:/app/storage
+      - ../:/app
+      - /tmp/metrics.json:/tmp/metrics.json
+
+  server-debug:
+    build:
+      context: ..
+      dockerfile: docker/server/Dockerfile.debug
+    ports:
+      - "8080:8080"
+      - "40000:40000"
+    depends_on:
+      - db
+    volumes:
+      - ../storage:/app/storage
+      - ../:/app
+      - /tmp/metrics.json:/tmp/metrics.json
+
+  agent:
+    build:
+      context: ..
+      dockerfile: docker/agent/Dockerfile
+    depends_on:
+      - server
+    volumes:
+      - ../storage:/app/storage
+
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: metrics
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: root
+    volumes:
+      - metrics-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  metrics-data:
