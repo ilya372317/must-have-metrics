@@ -12,7 +12,8 @@ services:
     volumes:
       - ../storage:/app/storage
       - ../:/app
-      - /tmp/metrics.json:/tmp/metrics.json
+      - /tmp:/tmp
+      - ../.env-server:/.env-server
 
   server-debug:
     build:
@@ -26,7 +27,8 @@ services:
     volumes:
       - ../storage:/app/storage
       - ../:/app
-      - /tmp/metrics.json:/tmp/metrics.json
+      - /tmp:/tmp
+      - ../.env-server:/.env-server
 
   agent:
     build:
