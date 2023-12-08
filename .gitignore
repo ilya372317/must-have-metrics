@@ -28,3 +28,4 @@ vendor/
 /golangci-lint
 /storage
 .env-server
+machinet.conf

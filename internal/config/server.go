@@ -28,7 +28,7 @@ func NewServer() (*ServerConfig, error) {
 func (c *ServerConfig) parseFlags() {
 	flag.StringVar(
 		&c.Host, "a",
-		"localhost:8080", "address where server will listen requests",
+		":8080", "address where server will listen requests",
 	)
 	flag.StringVar(
 		&c.FilePath, "f",
