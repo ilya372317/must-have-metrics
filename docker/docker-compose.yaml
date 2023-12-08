@@ -11,9 +11,10 @@ services:
       - db
     volumes:
       - ../storage:/app/storage
-      - ../:/app
       - /tmp:/tmp
-      - ../.env-server:/.env-server
+      - ../.env-server:/app/.env-server
+      - ../db:/app/db
+      - ../static:/app/static
 
   server-debug:
     build:
@@ -26,9 +27,10 @@ services:
       - db
     volumes:
       - ../storage:/app/storage
-      - ../:/app
       - /tmp:/tmp
-      - ../.env-server:/.env-server
+      - ../.env-server:/app/.env-server
+      - ../db:/app/db
+      - ../static:/app/static
 
   agent:
     build:
