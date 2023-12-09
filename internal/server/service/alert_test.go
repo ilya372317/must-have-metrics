@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"os"
 	"sort"
 	"testing"
@@ -155,10 +156,11 @@ func Test_addAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				tt.args.repo.Save(name, newAlertFromTestAlert(alert))
+				err := tt.args.repo.Save(nil, name, newAlertFromTestAlert(alert))
+				require.NoError(t, err)
 			}
 
-			_, err := AddAlert(tt.args.repo, tt.args.dto, serverConfig)
+			_, err := AddAlert(context.Background(), tt.args.repo, tt.args.dto, serverConfig)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -166,7 +168,7 @@ func Test_addAlert(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			addedAlert, addAlertErr := tt.args.repo.Get(tt.args.dto.Name)
+			addedAlert, addAlertErr := tt.args.repo.Get(nil, tt.args.dto.Name)
 			require.NoError(t, addAlertErr)
 			assert.Equal(t, addedAlert, newAlertFromTestAlert(tt.want))
 		})
@@ -245,17 +247,18 @@ func Test_updateCounterAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				tt.args.repo.Save(name, newAlertFromTestAlert(alert))
+				err := tt.args.repo.Save(nil, name, newAlertFromTestAlert(alert))
+				require.NoError(t, err)
 			}
 
-			_, err := updateCounterAlert(tt.args.dto, tt.args.repo)
+			_, err := updateCounterAlert(context.Background(), tt.args.dto, tt.args.repo)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			} else {
 				assert.NoError(t, err)
 			}
-			updatedAlert, getAlertErr := tt.args.repo.Get(tt.args.dto.Name)
+			updatedAlert, getAlertErr := tt.args.repo.Get(nil, tt.args.dto.Name)
 			require.NoError(t, getAlertErr)
 			assert.Equal(t, updatedAlert, newAlertFromTestAlert(tt.want))
 		})
@@ -323,14 +326,14 @@ func Test_updateGaugeAlert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := updateGaugeAlert(tt.args.dto, tt.args.repository)
+			_, err := updateGaugeAlert(context.Background(), tt.args.dto, tt.args.repository)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			} else {
 				require.NoError(t, err)
 			}
-			expectedAlert, getAlertError := tt.args.repository.Get(tt.args.dto.Name)
+			expectedAlert, getAlertError := tt.args.repository.Get(nil, tt.args.dto.Name)
 			require.NoError(t, getAlertError)
 			assert.Equal(t, newAlertFromTestAlert(tt.want), expectedAlert)
 		})
@@ -410,21 +413,22 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 		memoryStorage := storage.NewInMemoryStorage()
 		t.Run(tt.name, func(t *testing.T) {
 			for _, alert := range tt.items {
-				memoryStorage.Save(alert.Name, newAlertFromTestAlert(alert))
+				err := memoryStorage.Save(nil, alert.Name, newAlertFromTestAlert(alert))
+				require.NoError(t, err)
 			}
 
-			errStore := StoreToFilesystem(memoryStorage, tt.filepath)
+			errStore := StoreToFilesystem(context.Background(), memoryStorage, tt.filepath)
 			if tt.wantFillErr {
 				assert.Error(t, errStore)
 				return
 			} else {
 				require.NoError(t, errStore)
 			}
-			expect := memoryStorage.All()
+			expect, _ := memoryStorage.All(nil)
 
 			memoryStorage.Reset()
 
-			errFill := FillFromFilesystem(memoryStorage, tt.filepath)
+			errFill := FillFromFilesystem(context.Background(), memoryStorage, tt.filepath)
 			if tt.wantRestoreErr {
 				assert.Error(t, errFill)
 				return
@@ -432,7 +436,7 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 				require.NoError(t, errFill)
 			}
 
-			got := memoryStorage.All()
+			got, _ := memoryStorage.All(nil)
 			sort.SliceStable(expect, func(i, j int) bool {
 				return expect[i].Name > expect[j].Name
 			})

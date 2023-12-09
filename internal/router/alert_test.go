@@ -305,7 +305,8 @@ func TestAlertRouter(t *testing.T) {
 					intValue := tAlert.IntValue
 					alert.IntValue = &intValue
 				}
-				strg.Save(name, alert)
+				err := strg.Save(nil, name, alert)
+				require.NoError(t, err)
 			}
 			resp, responseBody := testRequest(t, ts, tt.method, tt.url, tt.requestBody)
 			defer func() {

@@ -77,7 +77,8 @@ func TestIndexHandler(t *testing.T) {
 					intValue := tAlert.IntValue
 					alert.IntValue = &intValue
 				}
-				strg.Save(name, alert)
+				err := strg.Save(nil, name, alert)
+				require.NoError(t, err)
 			}
 
 			request, err := http.NewRequest(http.MethodGet, "localhost:8080/", nil)

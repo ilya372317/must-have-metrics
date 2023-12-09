@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 )
 
 type ShowStorage interface {
-	Get(name string) (entity.Alert, error)
+	Get(ctx context.Context, name string) (entity.Alert, error)
 }
 
 func ShowHandler(strg ShowStorage) http.HandlerFunc {
@@ -19,7 +20,7 @@ func ShowHandler(strg ShowStorage) http.HandlerFunc {
 		if _, err := showDTO.Validate(); err != nil {
 			http.Error(w, fmt.Errorf("show parameters is invalid: %w", err).Error(), http.StatusBadRequest)
 		}
-		alert, err := strg.Get(showDTO.Name)
+		alert, err := strg.Get(r.Context(), showDTO.Name)
 		if err != nil {
 			http.Error(w, "alert not found", http.StatusNotFound)
 			return

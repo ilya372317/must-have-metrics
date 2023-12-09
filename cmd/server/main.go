@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -28,7 +29,7 @@ func main() {
 }
 
 func run() error {
-	repository := storage.NewInMemoryStorage()
+	var repository router.AlertStorage = storage.NewInMemoryStorage()
 	if err := godotenv.Load(utils.Root + "/.env-server"); err != nil {
 		logger.Get().Warnf("failed load .env-server file: %v", err)
 	}
@@ -42,20 +43,20 @@ func run() error {
 		sLogger.Fatalf("failed init postgres database: %v", err)
 	}
 
-	if err = db.Ping(); err != nil {
-		sLogger.Warn(err)
-		//TODO: set repo to in memory implementation
-	}
+	shouldConnectToDatabase := cnfg.DatabaseDSN != ""
 
-	if cnfg.DatabaseDSN != "" {
+	if shouldConnectToDatabase {
+		repository = &storage.DatabaseStorage{
+			DB: db,
+		}
 		runMigrations(db)
 	}
 
 	if cnfg.StoreInterval > 0 {
-		go service.SaveDataToFilesystemByInterval(cnfg, repository)
+		go service.SaveDataToFilesystemByInterval(context.Background(), cnfg, repository)
 	}
 	if cnfg.Restore {
-		if err = service.FillFromFilesystem(repository, cnfg.FilePath); err != nil {
+		if err = service.FillFromFilesystem(context.Background(), repository, cnfg.FilePath); err != nil {
 			sLogger.Warn(err)
 		}
 	}

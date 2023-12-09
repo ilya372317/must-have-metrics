@@ -17,21 +17,22 @@ const (
 )
 
 type DatabaseStorage struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func (d *DatabaseStorage) Save(ctx context.Context, name string, alert entity.Alert) error {
-	_, err := d.db.ExecContext(ctx,
+	_, err := d.DB.ExecContext(ctx,
 		`INSERT INTO metrics ("id", "type", "int_value", "float_value") VALUES ($1,$2,$3,$4)`,
 		name, alert.Type, alert.IntValue, alert.FloatValue)
 	if err != nil {
 		return fmt.Errorf("failed make insert request: %w", err)
 	}
+
 	return nil
 }
 
 func (d *DatabaseStorage) Update(ctx context.Context, name string, alert entity.Alert) error {
-	_, err := d.db.ExecContext(ctx,
+	_, err := d.DB.ExecContext(ctx,
 		`UPDATE metrics SET "type" = $1, "float_value" = $2, "int_value" = $3 WHERE id = $4`,
 		alert.Type, alert.FloatValue, alert.IntValue, name)
 	if err != nil {
@@ -44,28 +45,29 @@ func (d *DatabaseStorage) Get(ctx context.Context, name string) (entity.Alert, e
 	resultAlert := entity.Alert{}
 	var floatValue sql.NullFloat64
 	var intValue sql.NullInt64
-	row := d.db.QueryRowContext(ctx,
+	row := d.DB.QueryRowContext(ctx,
 		`SELECT "id", "type", "float_value", "int_value" FROM metrics WHERE id = $1`,
 		name)
 	err := row.Scan(&resultAlert.Name, &resultAlert.Type, &floatValue, &intValue)
 	if err != nil {
-		return entity.Alert{}, fmt.Errorf("failed get alert from database: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Alert{}, fmt.Errorf("alert with id '%s' not found: %w", name, err)
+		}
+		return entity.Alert{}, fmt.Errorf("failed to get alert with id '%s' from database: %w", name, err)
 	}
 
 	if floatValue.Valid {
-		value := floatValue.Float64
-		resultAlert.FloatValue = &value
+		resultAlert.FloatValue = &floatValue.Float64
 	}
 	if intValue.Valid {
-		value := intValue.Int64
-		resultAlert.IntValue = &value
+		resultAlert.IntValue = &intValue.Int64
 	}
 	return resultAlert, nil
 }
 
 func (d *DatabaseStorage) Has(ctx context.Context, name string) (bool, error) {
 	var id string
-	err := d.db.QueryRowContext(ctx,
+	err := d.DB.QueryRowContext(ctx,
 		`SELECT "id" FROM metrics WHERE id = $1`, name).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -78,7 +80,7 @@ func (d *DatabaseStorage) Has(ctx context.Context, name string) (bool, error) {
 
 func (d *DatabaseStorage) All(ctx context.Context) ([]entity.Alert, error) {
 	alerts := make([]entity.Alert, 0, 100)
-	rows, err := d.db.QueryContext(ctx,
+	rows, err := d.DB.QueryContext(ctx,
 		selectAllMetricsQuery)
 	defer func() {
 		if err = rows.Close(); err != nil {
@@ -111,7 +113,7 @@ func (d *DatabaseStorage) All(ctx context.Context) ([]entity.Alert, error) {
 
 func (d *DatabaseStorage) AllWithKeys(ctx context.Context) (map[string]entity.Alert, error) {
 	alerts := make(map[string]entity.Alert)
-	rows, err := d.db.QueryContext(ctx, selectAllMetricsQuery)
+	rows, err := d.DB.QueryContext(ctx, selectAllMetricsQuery)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -135,7 +137,7 @@ func (d *DatabaseStorage) AllWithKeys(ctx context.Context) (map[string]entity.Al
 }
 
 func (d *DatabaseStorage) Fill(ctx context.Context, m map[string]entity.Alert) error {
-	tx, err := d.db.BeginTx(ctx, nil)
+	tx, err := d.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}

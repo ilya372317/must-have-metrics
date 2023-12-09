@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -17,7 +18,7 @@ const (
 var showLogger = logger.Get()
 
 type ShowJSONStorage interface {
-	Get(name string) (entity.Alert, error)
+	Get(ctx context.Context, name string) (entity.Alert, error)
 }
 
 func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
@@ -35,7 +36,7 @@ func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
 			return
 		}
 
-		alert, err := storage.Get(showDTO.Name)
+		alert, err := storage.Get(request.Context(), showDTO.Name)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusNotFound)
 			return

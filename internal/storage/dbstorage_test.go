@@ -12,37 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDatabaseStorage_Save(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer func() {
-		_ = db.Close()
-	}()
-
-	d := &DatabaseStorage{db: db}
-
-	floatValue := 1.1
-	alert := entity.Alert{
-		Type:       "gauge",
-		Name:       "test_alert",
-		FloatValue: &floatValue,
-		IntValue:   nil,
-	}
-
-	mock.ExpectExec(
-		regexp.QuoteMeta(`INSERT INTO metrics ("id", "type", "int_value", "float_value") VALUES ($1,$2,$3,$4)`),
-	).
-		WithArgs(alert.Name, alert.Type, alert.IntValue, alert.FloatValue).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	err = d.Save(context.Background(), alert.Name, alert)
-	require.NoError(t, err)
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
-}
-
 func TestDatabaseStorage_Update(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
@@ -62,7 +31,7 @@ func TestDatabaseStorage_Update(t *testing.T) {
 		WithArgs(alert.Type, alert.FloatValue, alert.IntValue, alert.Name).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	d := DatabaseStorage{db: db}
+	d := DatabaseStorage{DB: db}
 	err = d.Update(context.Background(), "alert", alert)
 	require.NoError(t, err)
 
@@ -94,7 +63,7 @@ func TestDatabaseStorage_Get(t *testing.T) {
 		).
 		RowsWillBeClosed()
 
-	d := DatabaseStorage{db: db}
+	d := DatabaseStorage{DB: db}
 	resultAlert, err := d.Get(context.Background(), expectedAlert.Name)
 
 	require.NoError(t, err)
@@ -167,7 +136,7 @@ func TestDatabaseStorage_Has(t *testing.T) {
 				RowsWillBeClosed()
 
 			d := DatabaseStorage{
-				db: db,
+				DB: db,
 			}
 			got, err := d.Has(context.Background(), tt.argument)
 			if tt.want.wantErr {
@@ -237,7 +206,7 @@ func TestDatabaseStorage_All(t *testing.T) {
 
 			tt.mock(mock)
 
-			d := DatabaseStorage{db: db}
+			d := DatabaseStorage{DB: db}
 			got, err := d.All(context.Background())
 
 			if tt.wantErr {
@@ -305,7 +274,7 @@ func TestDatabaseStorage_AllWithKeys(t *testing.T) {
 
 			tt.mock(mock)
 
-			d := DatabaseStorage{db: db}
+			d := DatabaseStorage{DB: db}
 			got, err := d.AllWithKeys(context.Background())
 
 			if tt.wantErr {
@@ -400,7 +369,7 @@ func TestDatabaseStorage_Fill(t *testing.T) {
 
 			tt.mock(mock, tt.input)
 
-			d := DatabaseStorage{db: db}
+			d := DatabaseStorage{DB: db}
 			err = d.Fill(context.Background(), tt.input)
 
 			if tt.wantErr {

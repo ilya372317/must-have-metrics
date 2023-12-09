@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -14,12 +15,13 @@ import (
 var zapLogger = logger.Get()
 
 type UpdateJSONStorage interface {
-	Save(name string, alert entity.Alert)
-	Update(name string, alert entity.Alert) error
-	Get(name string) (entity.Alert, error)
-	Has(name string) bool
-	AllWithKeys() map[string]entity.Alert
-	Fill(map[string]entity.Alert)
+	Save(ctx context.Context, name string, alert entity.Alert) error
+	Update(ctx context.Context, name string, alert entity.Alert) error
+	Get(ctx context.Context, name string) (entity.Alert, error)
+	Has(ctx context.Context, name string) (bool, error)
+	All(ctx context.Context) ([]entity.Alert, error)
+	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
+	Fill(context.Context, map[string]entity.Alert) error
 }
 
 func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
@@ -35,7 +37,7 @@ func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerCon
 			http.Error(writer, validErr.Error(), http.StatusBadRequest)
 			return
 		}
-		newAlert, err := service.AddAlert(storage, updateDTO, serverConfig)
+		newAlert, err := service.AddAlert(request.Context(), storage, updateDTO, serverConfig)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			zapLogger.Error(err)

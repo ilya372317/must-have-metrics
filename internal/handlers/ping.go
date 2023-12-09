@@ -12,8 +12,6 @@ import (
 
 var pingLogger = logger.Get()
 
-// PingHandler TODO: In 11 increment add ping function in new storage. And pass it in argument
-// And delete getting DB from handler.
 func PingHandler(serverConfig *config.ServerConfig) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		db, err := sql.Open("pgx", serverConfig.DatabaseDSN)

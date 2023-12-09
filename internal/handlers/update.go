@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -11,12 +12,12 @@ import (
 )
 
 type UpdateStorage interface {
-	Save(name string, alert entity.Alert)
-	Update(name string, alert entity.Alert) error
-	Get(name string) (entity.Alert, error)
-	Has(name string) bool
-	AllWithKeys() map[string]entity.Alert
-	Fill(map[string]entity.Alert)
+	Save(ctx context.Context, name string, alert entity.Alert) error
+	Update(ctx context.Context, name string, alert entity.Alert) error
+	Get(ctx context.Context, name string) (entity.Alert, error)
+	Has(ctx context.Context, name string) (bool, error)
+	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
+	Fill(context.Context, map[string]entity.Alert) error
 }
 
 func UpdateHandler(storage UpdateStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
@@ -26,7 +27,7 @@ func UpdateHandler(storage UpdateStorage, serverConfig *config.ServerConfig) htt
 		if err != nil {
 			http.Error(writer, fmt.Errorf("invalid parameters: %w", err).Error(), http.StatusBadRequest)
 		}
-		if _, err := service.AddAlert(storage, updateAlertDTO, serverConfig); err != nil {
+		if _, err := service.AddAlert(request.Context(), storage, updateAlertDTO, serverConfig); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 		}
 	}
