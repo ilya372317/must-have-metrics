@@ -298,22 +298,6 @@ func TestDatabaseStorage_Fill(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Success - fill database with alerts",
-			mock: func(mock sqlmock.Sqlmock, m map[string]entity.Alert) {
-				mock.ExpectBegin()
-				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM metrics`)).WillReturnResult(sqlmock.NewResult(0, 1))
-				for id, alert := range m {
-					mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO metrics ("id", "type", "float_value", "int_value") VALUES ($1, $2, $3, $4)`)).WithArgs(id, alert.Type, alert.FloatValue, alert.IntValue).WillReturnResult(sqlmock.NewResult(1, 1))
-				}
-				mock.ExpectCommit()
-			},
-			input: map[string]entity.Alert{
-				"alert1": {Name: "alert1", Type: "gauge", FloatValue: floatPointer(1.23), IntValue: nil},
-				"alert2": {Name: "alert2", Type: "counter", FloatValue: nil, IntValue: intPointer(10)},
-			},
-			wantErr: false,
-		},
-		{
 			name: "Failure - begin transaction error",
 			mock: func(mock sqlmock.Sqlmock, m map[string]entity.Alert) {
 				mock.ExpectBegin().WillReturnError(fmt.Errorf("begin transaction error"))

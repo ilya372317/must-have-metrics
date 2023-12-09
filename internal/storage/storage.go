@@ -31,7 +31,7 @@ func (storage *InMemoryStorage) Save(_ context.Context, name string, alert entit
 }
 
 func (storage *InMemoryStorage) Update(_ context.Context, name string, newValue entity.Alert) error {
-	storageHasRecord, err := storage.Has(nil, name)
+	storageHasRecord, err := storage.Has(context.Background(), name)
 	if err != nil {
 		return fmt.Errorf("forbidden change existing value: %w", err)
 	}
@@ -39,7 +39,7 @@ func (storage *InMemoryStorage) Update(_ context.Context, name string, newValue 
 	if !storageHasRecord {
 		return &AlertNotFoundError{}
 	}
-	if err = storage.Save(nil, name, newValue); err != nil {
+	if err = storage.Save(context.Background(), name, newValue); err != nil {
 		return fmt.Errorf("failed save new value: %w", err)
 	}
 

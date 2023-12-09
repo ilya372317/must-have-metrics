@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -140,7 +141,7 @@ func TestInMemoryStorage_SaveAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewInMemoryStorage()
-			err := storage.Save(nil, tt.args.name, newAlertFromTestAlert(tt.args.alert))
+			err := storage.Save(context.Background(), tt.args.name, newAlertFromTestAlert(tt.args.alert))
 			require.NoError(t, err)
 			value, hasRecord := storage.Records[tt.args.name]
 			expectedAlert := newAlertFromTestAlert(tt.args.alert)
@@ -214,7 +215,7 @@ func TestInMemoryStorage_UpdateAlert(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewInMemoryStorage()
 			storage.Records = makeRecordsForStorage(tt.fields.Records)
-			err := storage.Update(nil, tt.args.name, newAlertFromTestAlert(tt.args.newValue))
+			err := storage.Update(context.Background(), tt.args.name, newAlertFromTestAlert(tt.args.newValue))
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {

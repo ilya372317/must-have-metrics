@@ -2,6 +2,7 @@ package router
 
 import (
 	"compress/gzip"
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -305,7 +306,7 @@ func TestAlertRouter(t *testing.T) {
 					intValue := tAlert.IntValue
 					alert.IntValue = &intValue
 				}
-				err := strg.Save(nil, name, alert)
+				err := strg.Save(context.Background(), name, alert)
 				require.NoError(t, err)
 			}
 			resp, responseBody := testRequest(t, ts, tt.method, tt.url, tt.requestBody)

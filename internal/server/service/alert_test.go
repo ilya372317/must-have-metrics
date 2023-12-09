@@ -156,7 +156,7 @@ func Test_addAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				err := tt.args.repo.Save(nil, name, newAlertFromTestAlert(alert))
+				err := tt.args.repo.Save(context.Background(), name, newAlertFromTestAlert(alert))
 				require.NoError(t, err)
 			}
 
@@ -168,7 +168,7 @@ func Test_addAlert(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			addedAlert, addAlertErr := tt.args.repo.Get(nil, tt.args.dto.Name)
+			addedAlert, addAlertErr := tt.args.repo.Get(context.Background(), tt.args.dto.Name)
 			require.NoError(t, addAlertErr)
 			assert.Equal(t, addedAlert, newAlertFromTestAlert(tt.want))
 		})
@@ -247,7 +247,7 @@ func Test_updateCounterAlert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				err := tt.args.repo.Save(nil, name, newAlertFromTestAlert(alert))
+				err := tt.args.repo.Save(context.Background(), name, newAlertFromTestAlert(alert))
 				require.NoError(t, err)
 			}
 
@@ -258,7 +258,7 @@ func Test_updateCounterAlert(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			updatedAlert, getAlertErr := tt.args.repo.Get(nil, tt.args.dto.Name)
+			updatedAlert, getAlertErr := tt.args.repo.Get(context.Background(), tt.args.dto.Name)
 			require.NoError(t, getAlertErr)
 			assert.Equal(t, updatedAlert, newAlertFromTestAlert(tt.want))
 		})
@@ -333,7 +333,7 @@ func Test_updateGaugeAlert(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			expectedAlert, getAlertError := tt.args.repository.Get(nil, tt.args.dto.Name)
+			expectedAlert, getAlertError := tt.args.repository.Get(context.Background(), tt.args.dto.Name)
 			require.NoError(t, getAlertError)
 			assert.Equal(t, newAlertFromTestAlert(tt.want), expectedAlert)
 		})
@@ -413,7 +413,7 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 		memoryStorage := storage.NewInMemoryStorage()
 		t.Run(tt.name, func(t *testing.T) {
 			for _, alert := range tt.items {
-				err := memoryStorage.Save(nil, alert.Name, newAlertFromTestAlert(alert))
+				err := memoryStorage.Save(context.Background(), alert.Name, newAlertFromTestAlert(alert))
 				require.NoError(t, err)
 			}
 
@@ -424,7 +424,7 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 			} else {
 				require.NoError(t, errStore)
 			}
-			expect, _ := memoryStorage.All(nil)
+			expect, _ := memoryStorage.All(context.Background())
 
 			memoryStorage.Reset()
 

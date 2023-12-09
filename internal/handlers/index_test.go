@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -77,7 +78,7 @@ func TestIndexHandler(t *testing.T) {
 					intValue := tAlert.IntValue
 					alert.IntValue = &intValue
 				}
-				err := strg.Save(nil, name, alert)
+				err := strg.Save(context.Background(), name, alert)
 				require.NoError(t, err)
 			}
 

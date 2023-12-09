@@ -83,7 +83,7 @@ func TestShowHandler(t *testing.T) {
 					intValue := tAlert.IntValue
 					alert.IntValue = &intValue
 				}
-				err := strg.Save(nil, name, alert)
+				err := strg.Save(context.Background(), name, alert)
 				require.NoError(t, err)
 			}
 			rctx := chi.NewRouteContext()
