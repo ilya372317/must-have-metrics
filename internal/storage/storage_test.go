@@ -61,7 +61,7 @@ func TestInMemoryStorage_GetAlert(t *testing.T) {
 			storage := &InMemoryStorage{
 				Records: makeRecordsForStorage(tt.fields.Records),
 			}
-			got, err := storage.Get(nil, tt.args.name)
+			got, err := storage.Get(context.Background(), tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -110,7 +110,7 @@ func TestInMemoryStorage_HasAlert(t *testing.T) {
 			storage := &InMemoryStorage{
 				Records: makeRecordsForStorage(tt.fields.Records),
 			}
-			if got, _ := storage.Has(nil, tt.args.name); got != tt.want {
+			if got, _ := storage.Has(context.Background(), tt.args.name); got != tt.want {
 				t.Errorf("Has() = %v, want %v", got, tt.want)
 			}
 		})

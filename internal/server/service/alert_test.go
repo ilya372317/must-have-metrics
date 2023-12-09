@@ -436,7 +436,7 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 				require.NoError(t, errFill)
 			}
 
-			got, _ := memoryStorage.All(nil)
+			got, _ := memoryStorage.All(context.Background())
 			sort.SliceStable(expect, func(i, j int) bool {
 				return expect[i].Name > expect[j].Name
 			})
