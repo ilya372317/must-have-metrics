@@ -35,6 +35,11 @@ func BulkUpdate(storage BulkSupportStorage, serverConfig *config.ServerConfig) h
 
 		alerts, err := service.BulkAddAlerts(request.Context(), storage, metricsList)
 
+		if err != nil {
+			http.Error(writer, fmt.Sprintf("failed insert metrics: %v", err), http.StatusInternalServerError)
+			return
+		}
+
 		responseMetricsList := make([]dto.Metrics, 0, len(alerts))
 		for _, alert := range alerts {
 			responseMetricsList = append(responseMetricsList, dto.NewMetricsDTOFromAlert(alert))

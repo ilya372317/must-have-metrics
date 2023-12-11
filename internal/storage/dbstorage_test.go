@@ -74,7 +74,10 @@ func TestBulkInsertOrUpdate(t *testing.T) {
 		rows, err := db.QueryContext(context.Background(),
 			`SELECT "id", "type", "float_value", "int_value" FROM metrics`)
 
-		defer rows.Close()
+		defer func() {
+			err = rows.Close()
+			require.NoError(t, err)
+		}()
 
 		require.NoError(t, err)
 
