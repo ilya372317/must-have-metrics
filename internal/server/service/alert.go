@@ -131,3 +131,28 @@ func updateCounterAlert(ctx context.Context, dto dto.Metrics, repo UpdateStorage
 	}
 	return &newAlert, nil
 }
+
+type BulkSupportStorage interface {
+	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
+	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
+}
+
+func BulkAddAlerts(ctx context.Context, storage BulkSupportStorage, metricsList []dto.Metrics) ([]entity.Alert, error) {
+	alerts := make([]entity.Alert, 0, len(metricsList))
+	ids := make([]string, 0, len(metricsList))
+	for _, metrics := range metricsList {
+		alerts = append(alerts, *metrics.ConvertToAlert())
+		ids = append(ids, metrics.ID)
+	}
+
+	if err := storage.BulkInsertOrUpdate(ctx, alerts); err != nil {
+		return nil, fmt.Errorf("failed bulk insert alerts: %w", err)
+	}
+
+	resultAlerts, err := storage.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("failed get alerts by ids: %w", err)
+	}
+
+	return resultAlerts, nil
+}

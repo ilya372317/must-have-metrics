@@ -79,6 +79,22 @@ func NewMetricsDTOFromAlert(alert entity.Alert) Metrics {
 	}
 }
 
+func (dto *Metrics) ConvertToAlert() *entity.Alert {
+	alert := &entity.Alert{
+		Type: dto.MType,
+		Name: dto.ID,
+	}
+
+	if dto.MType == entity.TypeGauge {
+		alert.FloatValue = dto.Value
+	}
+	if dto.MType == entity.TypeCounter {
+		alert.IntValue = dto.Delta
+	}
+
+	return alert
+}
+
 func (dto *Metrics) Validate() (bool, error) {
 	switch dto.MType {
 	case entity.TypeGauge:

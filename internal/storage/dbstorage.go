@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
@@ -204,4 +205,55 @@ func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entit
 	}
 
 	return nil
+}
+
+func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error) {
+	if len(ids) == 0 {
+		return []entity.Alert{}, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	for i := range ids {
+		placeholders[i] = fmt.Sprintf("$%d", i+1) // Начинаем с $1, $2 и так далее.
+	}
+	placeholderStr := strings.Join(placeholders, ",")
+
+	query := fmt.Sprintf(`SELECT "id", "type", "float_value", "int_value" FROM metrics WHERE "id" IN (%s)`, placeholderStr)
+
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+
+	rows, err := d.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var alerts []entity.Alert
+	for rows.Next() {
+		var alert entity.Alert
+		var floatValue sql.NullFloat64
+		var intValue sql.NullInt64
+
+		if err := rows.Scan(&alert.Name, &alert.Type, &floatValue, &intValue); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		if floatValue.Valid {
+			alert.FloatValue = &floatValue.Float64
+		}
+		if intValue.Valid {
+			alert.IntValue = &intValue.Int64
+		}
+
+		alerts = append(alerts, alert)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating through rows: %w", err)
+	}
+
+	return alerts, nil
 }

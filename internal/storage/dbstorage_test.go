@@ -91,12 +91,103 @@ func TestBulkInsertOrUpdate(t *testing.T) {
 	})
 }
 
+func TestDatabaseStorage_GetById(t *testing.T) {
+	pool, resource := setupDatabase(t)
+	defer teardownDatabase(t, pool, resource)
+	tests := []struct {
+		name     string
+		fields   []entity.Alert
+		argument []string
+		want     []entity.Alert
+	}{
+		{
+			name: "success case with filled storage",
+			fields: []entity.Alert{
+				{
+					Type:       "gauge",
+					Name:       "alert1",
+					FloatValue: floatPointer(10.234),
+					IntValue:   nil,
+				},
+				{
+					Type:       "counter",
+					Name:       "alert2",
+					FloatValue: nil,
+					IntValue:   intPointer(1234),
+				},
+				{
+					Type:       "gauge",
+					Name:       "alert3",
+					FloatValue: floatPointer(23.34),
+					IntValue:   nil,
+				},
+			},
+			argument: []string{"alert1", "alert2", "alert3"},
+			want: []entity.Alert{
+				{
+					Type:       "gauge",
+					Name:       "alert1",
+					FloatValue: floatPointer(10.234),
+					IntValue:   nil,
+				},
+				{
+					Type:       "counter",
+					Name:       "alert2",
+					FloatValue: nil,
+					IntValue:   intPointer(1234),
+				},
+				{
+					Type:       "gauge",
+					Name:       "alert3",
+					FloatValue: floatPointer(23.34),
+					IntValue:   nil,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			databaseStorage := DatabaseStorage{DB: db}
+			tx, err := db.BeginTx(context.Background(), nil)
+			require.NoError(t, err)
+			for _, existedAlert := range tt.fields {
+				_, err = tx.ExecContext(context.Background(),
+					`INSERT INTO metrics ("id", "type", "float_value", "int_value") 
+				VALUES ($1, $2, $3, $4)`,
+					existedAlert.Name, existedAlert.Type, existedAlert.FloatValue, existedAlert.IntValue)
+				if err != nil {
+					err = tx.Rollback()
+					require.NoError(t, err)
+					t.Fatalf("failed insert record")
+				}
+			}
+			err = tx.Commit()
+			require.NoError(t, err)
+
+			got, err := databaseStorage.GetByIDs(context.Background(), tt.argument)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.want, got)
+
+			clearDatabase(t)
+		})
+	}
+}
+
 func floatPointer(f float64) *float64 {
 	return &f
 }
 
 func intPointer(i int64) *int64 {
 	return &i
+}
+
+func clearDatabase(t *testing.T) {
+	t.Helper()
+	_, err := db.ExecContext(context.Background(),
+		`DELETE FROM metrics`)
+	require.NoError(t, err)
 }
 
 func setupDatabase(t *testing.T) (*dockertest.Pool, *dockertest.Resource) {

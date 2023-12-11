@@ -80,3 +80,30 @@ func (storage *InMemoryStorage) Fill(_ context.Context, alerts map[string]entity
 func (storage *InMemoryStorage) Reset() {
 	storage.Records = make(map[string]entity.Alert)
 }
+
+func (storage *InMemoryStorage) BulkInsertOrUpdate(_ context.Context, alerts []entity.Alert) error {
+	storage.Mutex.Lock()
+	for _, alert := range alerts {
+		storage.Records[alert.Name] = alert
+	}
+
+	storage.Mutex.Unlock()
+
+	return nil
+}
+
+func (storage *InMemoryStorage) GetByIDs(_ context.Context, ids []string) ([]entity.Alert, error) {
+	storage.Mutex.Lock()
+	resultAlerts := make([]entity.Alert, 0, len(ids))
+
+	for _, id := range ids {
+		alert, ok := storage.Records[id]
+		if ok {
+			resultAlerts = append(resultAlerts, alert)
+		}
+	}
+
+	storage.Mutex.Unlock()
+
+	return resultAlerts, nil
+}

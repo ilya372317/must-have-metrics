@@ -19,6 +19,8 @@ type AlertStorage interface {
 	All(ctx context.Context) ([]entity.Alert, error)
 	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
 	Fill(context.Context, map[string]entity.Alert) error
+	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
+	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
 }
 
 func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
