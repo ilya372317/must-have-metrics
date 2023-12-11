@@ -289,6 +289,18 @@ func TestAlertRouter(t *testing.T) {
 			},
 			requestBody: "",
 		},
+		{
+			name:   "updates mass",
+			url:    "/updates",
+			method: http.MethodPost,
+			fields: nil,
+			want: want{
+				status: http.StatusOK,
+				body:   `[{"id":"Some","type":"gauge","value":1.234234},{"id":"Some2","type":"counter","delta":2}]`,
+			},
+			requestBody: `[{"id":"Some","type":"gauge","value":1.234234},{"id":"Some2","type":"counter","delta":2}]
+`,
+		},
 	}
 
 	for _, tt := range testTable {
