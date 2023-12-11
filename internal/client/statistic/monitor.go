@@ -87,11 +87,8 @@ func (monitor *Monitor) ReportStat(host string, reportInterval time.Duration, re
 
 func (monitor *Monitor) reportStat(host string, reportSender sender.ReportSender) {
 	requestURL := createURLForReportStat(host)
-	//for statName, data := range monitor.Data {
-	//body := createBody(statName, data)
 	body := createBody(monitor.Data)
 	reportSender(requestURL, body)
-	//}
 	monitor.resetPollCount()
 }
 
@@ -149,25 +146,3 @@ func createBody(data map[string]MonitorValue) string {
 func createURLForReportStat(host string) string {
 	return fmt.Sprintf("http://" + host + "/updates")
 }
-
-//func createURLForReportStat(host string) string {
-//	return fmt.Sprintf("http://" + host + "/update")
-//}
-//
-//func createBody(name string, monitorValue MonitorValue) string {
-//	metrics := dto.Metrics{
-//		ID:    name,
-//		MType: monitorValue.Type,
-//	}
-//	if monitorValue.Type == entity.TypeCounter {
-//		int64Value := int64(*monitorValue.Delta)
-//		metrics.Delta = &int64Value
-//	}
-//	if monitorValue.Type == entity.TypeGauge {
-//		float64Value := float64(*monitorValue.Value)
-//		metrics.Value = &float64Value
-//	}
-//
-//	body, _ := json.Marshal(&metrics)
-//	return string(body)
-//}
