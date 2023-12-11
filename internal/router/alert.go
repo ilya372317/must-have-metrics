@@ -31,6 +31,9 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 	router.Route("/update", func(r chi.Router) {
 		r.Post("/", handlers.UpdateJSONHandler(repository, serverConfig))
 	})
+	router.Route("/updates", func(r chi.Router) {
+		r.Post("/", handlers.BulkUpdate(repository, serverConfig))
+	})
 	router.Route("/value", func(r chi.Router) {
 		r.Post("/", handlers.ShowJSONHandler(repository))
 	})

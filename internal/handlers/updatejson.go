@@ -32,12 +32,11 @@ func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerCon
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		updateDTO := dto.CreateUpdateAlertDTOFromMetrics(metrics)
-		if isValid, validErr := updateDTO.Validate(); !isValid {
+		if isValid, validErr := metrics.Validate(); !isValid {
 			http.Error(writer, validErr.Error(), http.StatusBadRequest)
 			return
 		}
-		newAlert, err := service.AddAlert(request.Context(), storage, updateDTO, serverConfig)
+		newAlert, err := service.AddAlert(request.Context(), storage, metrics, serverConfig)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			zapLogger.Error(err)

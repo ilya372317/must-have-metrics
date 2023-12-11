@@ -22,12 +22,17 @@ type UpdateStorage interface {
 
 func UpdateHandler(storage UpdateStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		updateAlertDTO := dto.CreateUpdateAlertDTOFromRequest(request)
-		_, err := updateAlertDTO.Validate()
+		metrics, err := dto.NewMetricsDTOFromRequestParams(request)
 		if err != nil {
+			http.Error(writer, fmt.Sprintf("invalid request parameters: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		ok, err := metrics.Validate()
+		if !ok {
 			http.Error(writer, fmt.Errorf("invalid parameters: %w", err).Error(), http.StatusBadRequest)
 		}
-		if _, err := service.AddAlert(request.Context(), storage, updateAlertDTO, serverConfig); err != nil {
+		if _, err := service.AddAlert(request.Context(), storage, *metrics, serverConfig); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 		}
 	}

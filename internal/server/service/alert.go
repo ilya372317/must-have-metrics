@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
@@ -12,8 +11,6 @@ import (
 )
 
 const failedUpdateCounterPattern = "failed update counter alert: %w"
-const failedParseGaugeValuePattern = "failed parse gauge alert value: %w"
-const failedParseCounterValuePattern = "failed parse counter alert value: %w"
 const failedUpdateGaugeAlertPattern = "failed update gauge alert: %w"
 
 type UpdateStorage interface {
@@ -28,12 +25,12 @@ type UpdateStorage interface {
 func AddAlert(
 	ctx context.Context,
 	repo UpdateStorage,
-	dto dto.UpdateAlertDTO,
+	dto dto.Metrics,
 	serverConfig *config.ServerConfig,
 ) (*entity.Alert, error) {
 	var alert *entity.Alert
 	var err error
-	switch dto.Type {
+	switch dto.MType {
 	case entity.TypeGauge:
 		alert, err = updateGaugeAlert(ctx, dto, repo)
 		if err != nil {
@@ -57,27 +54,27 @@ func AddAlert(
 	return alert, nil
 }
 
-func updateGaugeAlert(ctx context.Context, dto dto.UpdateAlertDTO, repository UpdateStorage) (*entity.Alert, error) {
-	floatData, err := strconv.ParseFloat(dto.Data, 64)
-	if err != nil {
-		return nil, fmt.Errorf(failedParseGaugeValuePattern, err)
+func updateGaugeAlert(ctx context.Context, dto dto.Metrics, repository UpdateStorage) (*entity.Alert, error) {
+	if dto.Value == nil {
+		return nil, errors.New("failed update gauge alert, missing value field")
 	}
-	alert := entity.MakeGaugeAlert(dto.Name, floatData)
-	alertExist, err := repository.Has(ctx, dto.Name)
+
+	alert := entity.MakeGaugeAlert(dto.ID, *dto.Value)
+	alertExist, err := repository.Has(ctx, dto.ID)
 	if err != nil {
 		return nil, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 	}
 	if alertExist {
-		if err = repository.Update(ctx, dto.Name, alert); err != nil {
+		if err = repository.Update(ctx, dto.ID, alert); err != nil {
 			return nil, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 		}
 	} else {
-		if err = repository.Save(ctx, dto.Name, alert); err != nil {
+		if err = repository.Save(ctx, dto.ID, alert); err != nil {
 			return nil, fmt.Errorf("failed save alert: %w", err)
 		}
 	}
 
-	newAlert, errAlertNotFound := repository.Get(ctx, dto.Name)
+	newAlert, errAlertNotFound := repository.Get(ctx, dto.ID)
 	if errAlertNotFound != nil {
 		return nil, fmt.Errorf(failedUpdateGaugeAlertPattern, errAlertNotFound)
 	}
@@ -85,37 +82,37 @@ func updateGaugeAlert(ctx context.Context, dto dto.UpdateAlertDTO, repository Up
 	return &newAlert, nil
 }
 
-func updateCounterAlert(ctx context.Context, dto dto.UpdateAlertDTO, repo UpdateStorage) (*entity.Alert, error) {
-	intData, err := strconv.ParseInt(dto.Data, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf(failedParseCounterValuePattern, err)
+func updateCounterAlert(ctx context.Context, dto dto.Metrics, repo UpdateStorage) (*entity.Alert, error) {
+	if dto.Delta == nil {
+		return nil, errors.New("failed update counter alert, missing delta filed")
 	}
-	alert := entity.MakeCounterAlert(dto.Name, intData)
-	hasAlert, err := repo.Has(ctx, dto.Name)
+
+	alert := entity.MakeCounterAlert(dto.ID, *dto.Delta)
+	hasAlert, err := repo.Has(ctx, dto.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed check alert exist: %w", err)
 	}
 	if !hasAlert {
-		if err = repo.Save(ctx, dto.Name, alert); err != nil {
+		if err = repo.Save(ctx, dto.ID, alert); err != nil {
 			return nil, fmt.Errorf("failed save gauge alert: %w", err)
 		}
 
-		resultAlert, err := repo.Get(ctx, dto.Name)
+		resultAlert, err := repo.Get(ctx, dto.ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed update counter alert: %w", err)
 		}
 		return &resultAlert, nil
 	}
-	oldAlert, err := repo.Get(ctx, dto.Name)
+	oldAlert, err := repo.Get(ctx, dto.ID)
 	if err != nil {
 		return nil, fmt.Errorf("counter alert for update not found: %w", err)
 	}
 
 	if oldAlert.Type == entity.TypeGauge {
-		if err = repo.Save(ctx, dto.Name, alert); err != nil {
+		if err = repo.Save(ctx, dto.ID, alert); err != nil {
 			return nil, fmt.Errorf("failed save gauge alert: %w", err)
 		}
-		newAlert, err := repo.Get(ctx, dto.Name)
+		newAlert, err := repo.Get(ctx, dto.ID)
 		if err != nil {
 			return nil, fmt.Errorf(failedUpdateCounterPattern, err)
 		}
@@ -125,10 +122,10 @@ func updateCounterAlert(ctx context.Context, dto dto.UpdateAlertDTO, repo Update
 	newValue := *oldAlert.IntValue + *alert.IntValue
 	alert.IntValue = &newValue
 
-	if err := repo.Update(ctx, dto.Name, alert); err != nil {
+	if err := repo.Update(ctx, dto.ID, alert); err != nil {
 		return nil, fmt.Errorf(failedUpdateCounterPattern, err)
 	}
-	newAlert, err := repo.Get(ctx, dto.Name)
+	newAlert, err := repo.Get(ctx, dto.ID)
 	if err != nil {
 		return nil, fmt.Errorf(failedUpdateCounterPattern, err)
 	}
