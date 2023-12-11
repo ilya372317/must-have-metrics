@@ -6,18 +6,21 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/server/service"
 )
 
-type BulkSupportStorage interface {
+type BulkUpdateStorage interface {
 	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
 	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
+	Get(ctx context.Context, name string) (entity.Alert, error)
+	Has(ctx context.Context, name string) (bool, error)
+	Save(ctx context.Context, name string, alert entity.Alert) error
+	Update(ctx context.Context, name string, alert entity.Alert) error
 }
 
-func BulkUpdate(storage BulkSupportStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
+func BulkUpdate(storage BulkUpdateStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
 		metricsList, err := dto.NewMetricsListDTOFromRequest(request)

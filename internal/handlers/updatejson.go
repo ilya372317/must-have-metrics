@@ -19,9 +19,10 @@ type UpdateJSONStorage interface {
 	Update(ctx context.Context, name string, alert entity.Alert) error
 	Get(ctx context.Context, name string) (entity.Alert, error)
 	Has(ctx context.Context, name string) (bool, error)
-	All(ctx context.Context) ([]entity.Alert, error)
 	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
 	Fill(context.Context, map[string]entity.Alert) error
+	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
+	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
 }
 
 func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerConfig) http.HandlerFunc {

@@ -293,13 +293,19 @@ func TestAlertRouter(t *testing.T) {
 			name:   "updates mass",
 			url:    "/updates",
 			method: http.MethodPost,
-			fields: nil,
+			fields: map[string]testAlert{
+				"Some2": {
+					Type:       "counter",
+					Name:       "Some2",
+					FloatValue: 0,
+					IntValue:   2,
+				},
+			},
 			want: want{
 				status: http.StatusOK,
-				body:   `[{"id":"Some","type":"gauge","value":1.234234},{"id":"Some2","type":"counter","delta":2}]`,
+				body:   `[{"id":"Some","type":"gauge","value":1.234234},{"id":"Some2","type":"counter","delta":4}]`,
 			},
-			requestBody: `[{"id":"Some","type":"gauge","value":1.234234},{"id":"Some2","type":"counter","delta":2}]
-`,
+			requestBody: `[{"id":"Some","type":"gauge","value":1.234234},{"id":"Some2","type":"counter","delta":2}]`,
 		},
 	}
 
