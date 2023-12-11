@@ -23,6 +23,5 @@ func BulkUpdate(storage UpdateJSONStorage, serverConfig *config.ServerConfig) ht
 				http.Error(writer, fmt.Sprintf("invalid request body: %v", err), http.StatusBadRequest)
 			}
 		}
-
 	}
 }

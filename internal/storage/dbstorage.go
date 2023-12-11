@@ -169,3 +169,39 @@ func (d *DatabaseStorage) Fill(ctx context.Context, m map[string]entity.Alert) e
 
 	return nil
 }
+
+func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error {
+	tx, err := d.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed begin transaction on insert or update: %w", err)
+	}
+
+	preparedQuery, err := tx.PrepareContext(ctx, `INSERT INTO metrics ("id", "type", "float_value", "int_value") 
+	VALUES ($1, $2, $3, $4) 
+	ON CONFLICT (id) 
+	DO UPDATE SET "type" = excluded.type, "float_value" = excluded.float_value, "int_value" = excluded.int_value`)
+
+	if err != nil {
+		if err = tx.Rollback(); err != nil {
+			logger.Get().Warnf("failed rollback: %v", err)
+		}
+		return fmt.Errorf("failed prepare query on update or insert: %w", err)
+	}
+	defer preparedQuery.Close()
+
+	for _, alert := range alerts {
+		_, err = preparedQuery.ExecContext(ctx, alert.Name, alert.Type, alert.FloatValue, alert.IntValue)
+		if err != nil {
+			if err = tx.Rollback(); err != nil {
+				logger.Get().Warnf("failed rollback: %v", err)
+			}
+			return fmt.Errorf("failed insert alert %v: %v", alert, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed commit changes on update or insert: %w", err)
+	}
+
+	return nil
+}

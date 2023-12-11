@@ -27,7 +27,7 @@ type UpdateJSONStorage interface {
 func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
-		metrics, err := dto.CreateMetricsDTOFromRequest(request)
+		metrics, err := dto.NewMetricsDTOFromRequest(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
@@ -42,7 +42,7 @@ func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerCon
 			zapLogger.Error(err)
 			return
 		}
-		responseMetric := dto.CreateMetricsDTOFromAlert(*newAlert)
+		responseMetric := dto.NewMetricsDTOFromAlert(*newAlert)
 		response, err := json.Marshal(&responseMetric)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)

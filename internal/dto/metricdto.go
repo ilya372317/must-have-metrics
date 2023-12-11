@@ -30,7 +30,7 @@ type Metrics struct {
 	Delta *int64   `json:"delta,omitempty" valid:"optional"` // Значение метрики в случае передачи counter
 }
 
-func CreateMetricsDTOFromRequest(r *http.Request) (Metrics, error) {
+func NewMetricsDTOFromRequest(r *http.Request) (Metrics, error) {
 	metrics := Metrics{}
 	defer func() {
 		_ = r.Body.Close()
@@ -70,7 +70,7 @@ func NewMetricsDTOFromRequestParams(r *http.Request) (*Metrics, error) {
 	return metrics, nil
 }
 
-func CreateMetricsDTOFromAlert(alert entity.Alert) Metrics {
+func NewMetricsDTOFromAlert(alert entity.Alert) Metrics {
 	return Metrics{
 		ID:    alert.Name,
 		MType: alert.Type,
