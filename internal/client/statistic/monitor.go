@@ -87,8 +87,10 @@ func (monitor *Monitor) ReportStat(host string, reportInterval time.Duration, re
 
 func (monitor *Monitor) reportStat(host string, reportSender sender.ReportSender) {
 	requestURL := createURLForReportStat(host)
-	body := createBody(monitor.Data)
-	reportSender(requestURL, body)
+	for statName, data := range monitor.Data {
+		body := createBody(statName, data)
+		reportSender(requestURL, body)
+	}
 	monitor.resetPollCount()
 }
 
@@ -121,28 +123,50 @@ func (monitor *Monitor) resetPollCount() {
 	}
 }
 
+//func createBody(data map[string]MonitorValue) string {
+//	metricsList := make([]dto.Metrics, 0, len(data))
+//	for name, monitorValue := range data {
+//		m := dto.Metrics{
+//			ID:    name,
+//			MType: monitorValue.Type,
+//		}
+//		if monitorValue.Type == entity.TypeCounter {
+//			int64Value := int64(*monitorValue.Delta)
+//			m.Delta = &int64Value
+//		}
+//		if monitorValue.Type == entity.TypeGauge {
+//			float64Value := float64(*monitorValue.Value)
+//			m.Value = &float64Value
+//		}
+//		metricsList = append(metricsList, m)
+//	}
+//
+//	body, _ := json.Marshal(&metricsList)
+//	return string(body)
+//}
+//
+//func createURLForReportStat(host string) string {
+//	return fmt.Sprintf("http://" + host + "/updates")
+//}
+
 func createURLForReportStat(host string) string {
-	return fmt.Sprintf("http://" + host + "/updates")
+	return fmt.Sprintf("http://" + host + "/update")
 }
 
-func createBody(data map[string]MonitorValue) string {
-	metricsList := make([]dto.Metrics, 0, len(data))
-	for name, monitorValue := range data {
-		m := dto.Metrics{
-			ID:    name,
-			MType: monitorValue.Type,
-		}
-		if monitorValue.Type == entity.TypeCounter {
-			int64Value := int64(*monitorValue.Delta)
-			m.Delta = &int64Value
-		}
-		if monitorValue.Type == entity.TypeGauge {
-			float64Value := float64(*monitorValue.Value)
-			m.Value = &float64Value
-		}
-		metricsList = append(metricsList, m)
+func createBody(name string, monitorValue MonitorValue) string {
+	metrics := dto.Metrics{
+		ID:    name,
+		MType: monitorValue.Type,
+	}
+	if monitorValue.Type == entity.TypeCounter {
+		int64Value := int64(*monitorValue.Delta)
+		metrics.Delta = &int64Value
+	}
+	if monitorValue.Type == entity.TypeGauge {
+		float64Value := float64(*monitorValue.Value)
+		metrics.Value = &float64Value
 	}
 
-	body, _ := json.Marshal(&metricsList)
+	body, _ := json.Marshal(&metrics)
 	return string(body)
 }
