@@ -18,6 +18,11 @@ const (
 	failedMakeRollbackErrPattern = "failed make rollback: %v"
 	failedCloseRowsErrPattern    = "failed close rows connection: %v"
 	selectAllMetricsQuery        = `SELECT "id", "type", "float_value", "int_value" FROM metrics`
+	failedExecuteQueryErrPattern = "failed to execute query: %w"
+	failedScanRowErrPattern      = "failed to scan row: %w"
+	iterationInRowsErrPattern    = "error iterating through rows: %w"
+	failedRollbackErrPattern     = "failed rollback: %v"
+	stepForDelayRetry            = 2
 )
 
 type DatabaseStorage struct {
@@ -112,33 +117,41 @@ func (d *DatabaseStorage) Has(ctx context.Context, name string) (bool, error) {
 }
 
 func (d *DatabaseStorage) All(ctx context.Context) ([]entity.Alert, error) {
-	alerts := make([]entity.Alert, 0, 100)
-	rows, err := d.DB.QueryContext(ctx,
-		selectAllMetricsQuery)
-	defer func() {
-		if err = rows.Close(); err != nil {
-			logger.Get().Warnf(failedCloseRowsErrPattern, err)
-		}
-	}()
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return alerts, nil
-		}
-		return nil, fmt.Errorf("failed get all records from database: %w", err)
-	}
+	alerts := make([]entity.Alert, 0, 100) //nolint:nolintlint,gomnd
 
-	for rows.Next() {
-		newAlert := entity.Alert{}
-		err = rows.Scan(&newAlert.Name, &newAlert.Type, &newAlert.FloatValue, &newAlert.IntValue)
+	operation := func() error {
+		rows, err := d.DB.QueryContext(ctx,
+			selectAllMetricsQuery)
+		defer func() {
+			if err = rows.Close(); err != nil {
+				logger.Get().Warnf(failedCloseRowsErrPattern, err)
+			}
+		}()
 		if err != nil {
-			return nil, fmt.Errorf("failed scan data in all query:%w ", err)
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil
+			}
+			return fmt.Errorf("failed get all records from database: %w", err)
 		}
 
-		alerts = append(alerts, newAlert)
+		for rows.Next() {
+			newAlert := entity.Alert{}
+			err = rows.Scan(&newAlert.Name, &newAlert.Type, &newAlert.FloatValue, &newAlert.IntValue)
+			if err != nil {
+				return fmt.Errorf("failed scan data in all query:%w ", err)
+			}
+
+			alerts = append(alerts, newAlert)
+		}
+
+		if rows.Err() != nil {
+			return fmt.Errorf("something went wrong on scan rows: %w", err)
+		}
+		return nil
 	}
 
-	if rows.Err() != nil {
-		return nil, fmt.Errorf("failed get all request: %w", err)
+	if err := withRetries(operation); err != nil {
+		return nil, err
 	}
 
 	return alerts, nil
@@ -146,97 +159,113 @@ func (d *DatabaseStorage) All(ctx context.Context) ([]entity.Alert, error) {
 
 func (d *DatabaseStorage) AllWithKeys(ctx context.Context) (map[string]entity.Alert, error) {
 	alerts := make(map[string]entity.Alert)
-	rows, err := d.DB.QueryContext(ctx, selectAllMetricsQuery)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %w", err)
-	}
-	defer func() {
-		_ = rows.Close()
-	}()
-
-	for rows.Next() {
-		var alert entity.Alert
-		if err := rows.Scan(&alert.Name, &alert.Type, &alert.FloatValue, &alert.IntValue); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+	operation := func() error {
+		rows, err := d.DB.QueryContext(ctx, selectAllMetricsQuery)
+		if err != nil {
+			return fmt.Errorf(failedExecuteQueryErrPattern, err)
 		}
-		alerts[alert.Name] = alert
+		defer func() {
+			_ = rows.Close()
+		}()
+
+		for rows.Next() {
+			var alert entity.Alert
+			if err = rows.Scan(&alert.Name, &alert.Type, &alert.FloatValue, &alert.IntValue); err != nil {
+				return fmt.Errorf(failedScanRowErrPattern, err)
+			}
+			alerts[alert.Name] = alert
+		}
+
+		if err = rows.Err(); err != nil {
+			return fmt.Errorf(iterationInRowsErrPattern, err)
+		}
+		return nil
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating through rows: %w", err)
+	if err := withRetries(operation); err != nil {
+		return nil, err
 	}
 
 	return alerts, nil
 }
 
 func (d *DatabaseStorage) Fill(ctx context.Context, m map[string]entity.Alert) error {
-	tx, err := d.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-
-	_, err = tx.ExecContext(ctx, `DELETE FROM metrics`)
-	if err != nil {
-		err = tx.Rollback()
+	operation := func() error {
+		tx, err := d.DB.BeginTx(ctx, nil)
 		if err != nil {
-			logger.Get().Warnf(failedMakeRollbackErrPattern, err)
+			return fmt.Errorf("failed to begin transaction: %w", err)
 		}
-		return fmt.Errorf("failed to delete existing records: %w", err)
-	}
 
-	for id, alert := range m {
-		_, err = tx.ExecContext(ctx,
-			`INSERT INTO metrics ("id", "type", "float_value", "int_value") VALUES ($1, $2, $3, $4)`,
-			id, alert.Type, alert.FloatValue, alert.IntValue)
+		_, err = tx.ExecContext(ctx, `DELETE FROM metrics`)
 		if err != nil {
-			if err = tx.Rollback(); err != nil {
+			err = tx.Rollback()
+			if err != nil {
 				logger.Get().Warnf(failedMakeRollbackErrPattern, err)
 			}
-			return fmt.Errorf("failed to insert alert with id %s: %w", id, err)
+			return fmt.Errorf("failed to delete existing records: %w", err)
 		}
+
+		for id, alert := range m {
+			_, err = tx.ExecContext(ctx,
+				`INSERT INTO metrics ("id", "type", "float_value", "int_value") VALUES ($1, $2, $3, $4)`,
+				id, alert.Type, alert.FloatValue, alert.IntValue)
+			if err != nil {
+				if err = tx.Rollback(); err != nil {
+					logger.Get().Warnf(failedMakeRollbackErrPattern, err)
+				}
+				return fmt.Errorf("failed to insert alert with id %s: %w", id, err)
+			}
+		}
+
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("failed to commit transaction: %w", err)
+		}
+
+		return nil
 	}
 
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return nil
+	return withRetries(operation)
 }
 
 func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error {
-	tx, err := d.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("failed begin transaction on insert or update: %w", err)
-	}
+	operation := func() error {
+		tx, err := d.DB.BeginTx(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("failed begin transaction on insert or update: %w", err)
+		}
 
-	preparedQuery, err := tx.PrepareContext(ctx, `INSERT INTO metrics ("id", "type", "float_value", "int_value") 
+		preparedQuery, err := tx.PrepareContext(ctx, `INSERT INTO metrics ("id", "type", "float_value", "int_value") 
 	VALUES ($1, $2, $3, $4) 
 	ON CONFLICT (id) 
 	DO UPDATE SET "type" = excluded.type, "float_value" = excluded.float_value, "int_value" = excluded.int_value`)
 
-	if err != nil {
-		if err = tx.Rollback(); err != nil {
-			logger.Get().Warnf("failed rollback: %v", err)
-		}
-		return fmt.Errorf("failed prepare query on update or insert: %w", err)
-	}
-	defer preparedQuery.Close()
-
-	for _, alert := range alerts {
-		_, err = preparedQuery.ExecContext(ctx, alert.Name, alert.Type, alert.FloatValue, alert.IntValue)
 		if err != nil {
 			if err = tx.Rollback(); err != nil {
-				logger.Get().Warnf("failed rollback: %v", err)
+				logger.Get().Warnf(failedRollbackErrPattern, err)
 			}
-			return fmt.Errorf("failed insert alert %v: %v", alert, err)
+			return fmt.Errorf("failed prepare query on update or insert: %w", err)
 		}
-	}
+		defer func() {
+			_ = preparedQuery.Close()
+		}()
 
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed commit changes on update or insert: %w", err)
-	}
+		for _, alert := range alerts {
+			_, err = preparedQuery.ExecContext(ctx, alert.Name, alert.Type, alert.FloatValue, alert.IntValue)
+			if err != nil {
+				if err = tx.Rollback(); err != nil {
+					logger.Get().Warnf(failedRollbackErrPattern, err)
+				}
+				return fmt.Errorf("failed insert alert %v: %w", alert, err)
+			}
+		}
 
-	return nil
+		if err = tx.Commit(); err != nil {
+			return fmt.Errorf("failed commit changes on update or insert: %w", err)
+		}
+
+		return nil
+	}
+	return withRetries(operation)
 }
 
 func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error) {
@@ -250,7 +279,9 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 	}
 	placeholderStr := strings.Join(placeholders, ",")
 
-	query := fmt.Sprintf(`SELECT "id", "type", "float_value", "int_value" FROM metrics WHERE "id" IN (%s)`, placeholderStr)
+	query := fmt.Sprintf(
+		`SELECT "id", "type", "float_value", "int_value" FROM metrics WHERE "id" IN (%s)`,
+		placeholderStr)
 
 	args := make([]any, len(ids))
 	for i, id := range ids {
@@ -259,9 +290,12 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 
 	rows, err := d.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %w", err)
+		return nil, fmt.Errorf(failedExecuteQueryErrPattern, err)
 	}
-	defer rows.Close()
+	defer func() {
+		err = rows.Close()
+		logger.Get().Warnf("failed close rows: %v", err)
+	}()
 
 	var alerts []entity.Alert
 	for rows.Next() {
@@ -270,7 +304,7 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 		var intValue sql.NullInt64
 
 		if err := rows.Scan(&alert.Name, &alert.Type, &floatValue, &intValue); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+			return nil, fmt.Errorf(failedScanRowErrPattern, err)
 		}
 
 		if floatValue.Valid {
@@ -284,7 +318,7 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating through rows: %w", err)
+		return nil, fmt.Errorf(iterationInRowsErrPattern, err)
 	}
 
 	return alerts, nil
@@ -311,7 +345,7 @@ func withRetries(fn func() error) error {
 			return err
 		}
 		time.Sleep(delay)
-		delay = delay + (time.Second * 2)
+		delay += time.Second * stepForDelayRetry
 	}
 	return err
 }
