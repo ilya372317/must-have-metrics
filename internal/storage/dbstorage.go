@@ -6,9 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const (
@@ -22,61 +25,90 @@ type DatabaseStorage struct {
 }
 
 func (d *DatabaseStorage) Save(ctx context.Context, name string, alert entity.Alert) error {
-	_, err := d.DB.ExecContext(ctx,
-		`INSERT INTO metrics ("id", "type", "int_value", "float_value") VALUES ($1,$2,$3,$4)`,
-		name, alert.Type, alert.IntValue, alert.FloatValue)
-	if err != nil {
-		return fmt.Errorf("failed make insert request: %w", err)
+	operation := func() error {
+		_, err := d.DB.ExecContext(ctx,
+			`INSERT INTO metrics ("id", "type", "int_value", "float_value") VALUES ($1,$2,$3,$4)`,
+			name, alert.Type, alert.IntValue, alert.FloatValue)
+		if err != nil {
+			return fmt.Errorf("failed make insert request: %w", err)
+		}
+		return nil
 	}
 
-	return nil
+	return withRetries(operation)
 }
 
 func (d *DatabaseStorage) Update(ctx context.Context, name string, alert entity.Alert) error {
-	_, err := d.DB.ExecContext(ctx,
-		`UPDATE metrics SET "type" = $1, "float_value" = $2, "int_value" = $3 WHERE id = $4`,
-		alert.Type, alert.FloatValue, alert.IntValue, name)
-	if err != nil {
-		return fmt.Errorf("failed update alert in database: %w", err)
+	operation := func() error {
+		_, err := d.DB.ExecContext(ctx,
+			`UPDATE metrics SET "type" = $1, "float_value" = $2, "int_value" = $3 WHERE id = $4`,
+			alert.Type, alert.FloatValue, alert.IntValue, name)
+		if err != nil {
+			return fmt.Errorf("failed update alert in database: %w", err)
+		}
+		return nil
 	}
-	return nil
+	return withRetries(operation)
 }
 
 func (d *DatabaseStorage) Get(ctx context.Context, name string) (entity.Alert, error) {
 	resultAlert := entity.Alert{}
-	var floatValue sql.NullFloat64
-	var intValue sql.NullInt64
-	row := d.DB.QueryRowContext(ctx,
-		`SELECT "id", "type", "float_value", "int_value" FROM metrics WHERE id = $1`,
-		name)
-	err := row.Scan(&resultAlert.Name, &resultAlert.Type, &floatValue, &intValue)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return entity.Alert{}, fmt.Errorf("alert with id '%s' not found: %w", name, err)
+	operation := func() error {
+		var floatValue sql.NullFloat64
+		var intValue sql.NullInt64
+		row := d.DB.QueryRowContext(ctx,
+			`SELECT "id", "type", "float_value", "int_value" FROM metrics WHERE id = $1`,
+			name)
+		err := row.Scan(&resultAlert.Name, &resultAlert.Type, &floatValue, &intValue)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return fmt.Errorf("alert with id '%s' not found: %w", name, err)
+			}
+			return fmt.Errorf("failed to get alert with id '%s' from database: %w", name, err)
 		}
-		return entity.Alert{}, fmt.Errorf("failed to get alert with id '%s' from database: %w", name, err)
+
+		if floatValue.Valid {
+			resultAlert.FloatValue = &floatValue.Float64
+		}
+		if intValue.Valid {
+			resultAlert.IntValue = &intValue.Int64
+		}
+		return nil
 	}
 
-	if floatValue.Valid {
-		resultAlert.FloatValue = &floatValue.Float64
+	err := withRetries(operation)
+	if err != nil {
+		return entity.Alert{}, err
 	}
-	if intValue.Valid {
-		resultAlert.IntValue = &intValue.Int64
-	}
+
 	return resultAlert, nil
 }
 
 func (d *DatabaseStorage) Has(ctx context.Context, name string) (bool, error) {
 	var id string
-	err := d.DB.QueryRowContext(ctx,
-		`SELECT "id" FROM metrics WHERE id = $1`, name).Scan(&id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
+	var result bool
+
+	operation := func() error {
+		err := d.DB.QueryRowContext(ctx,
+			`SELECT "id" FROM metrics WHERE id = $1`, name).Scan(&id)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				result = false
+				return nil
+			}
+			result = false
+			return fmt.Errorf("failed make has query: %w", err)
 		}
-		return false, fmt.Errorf("failed make has query: %w", err)
+		result = true
+		return nil
 	}
-	return true, nil
+
+	err := withRetries(operation)
+	if err != nil {
+		return false, err
+	}
+
+	return result, nil
 }
 
 func (d *DatabaseStorage) All(ctx context.Context) ([]entity.Alert, error) {
@@ -214,13 +246,13 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 
 	placeholders := make([]string, len(ids))
 	for i := range ids {
-		placeholders[i] = fmt.Sprintf("$%d", i+1) // Начинаем с $1, $2 и так далее.
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
 	}
 	placeholderStr := strings.Join(placeholders, ",")
 
 	query := fmt.Sprintf(`SELECT "id", "type", "float_value", "int_value" FROM metrics WHERE "id" IN (%s)`, placeholderStr)
 
-	args := make([]interface{}, len(ids))
+	args := make([]any, len(ids))
 	for i, id := range ids {
 		args[i] = id
 	}
@@ -256,4 +288,30 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 	}
 
 	return alerts, nil
+}
+
+func isRetriableError(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgerrcode.IsConnectionException(pgErr.Code)
+	}
+	return false
+}
+
+func withRetries(fn func() error) error {
+	const maxRetries = 3
+	delay := time.Second
+	var err error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err = fn()
+		if err == nil {
+			return nil
+		}
+		if !isRetriableError(err) {
+			return err
+		}
+		time.Sleep(delay)
+		delay = delay + (time.Second * 2)
+	}
+	return err
 }
