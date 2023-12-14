@@ -21,6 +21,7 @@ type AlertStorage interface {
 	Fill(context.Context, map[string]entity.Alert) error
 	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
 	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
+	Ping() error
 }
 
 func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
@@ -28,7 +29,7 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 	router.Use(middleware.WithLogging())
 	router.Use(middleware.Compressed())
 	router.Get("/", handlers.IndexHandler(repository))
-	router.Get("/ping", handlers.PingHandler(serverConfig))
+	router.Get("/ping", handlers.PingHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
 		r.Post("/", handlers.UpdateJSONHandler(repository, serverConfig))

@@ -324,6 +324,13 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 	return alerts, nil
 }
 
+func (d *DatabaseStorage) Ping() error {
+	if pingErr := d.DB.Ping(); pingErr != nil {
+		return fmt.Errorf("failed ping database connection: %w", pingErr)
+	}
+	return nil
+}
+
 func isRetriableError(err error) bool {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {

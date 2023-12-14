@@ -107,3 +107,7 @@ func (storage *InMemoryStorage) GetByIDs(_ context.Context, ids []string) ([]ent
 
 	return resultAlerts, nil
 }
+
+func (storage *InMemoryStorage) Ping() error {
+	return nil
+}
