@@ -52,7 +52,8 @@ func run() error {
 		runMigrations(db)
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	if cnfg.StoreInterval > 0 {
 		go service.SaveDataToFilesystemByInterval(ctx, cnfg, repository)
