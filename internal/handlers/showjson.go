@@ -15,8 +15,6 @@ const (
 	jsonContentHeaderValue = "application/json"
 )
 
-var showLogger = logger.Get()
-
 type ShowJSONStorage interface {
 	Get(ctx context.Context, name string) (entity.Alert, error)
 }
@@ -49,7 +47,7 @@ func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
 		}
 		_, err = writer.Write(response)
 		if err != nil {
-			showLogger.Error(err)
+			logger.Log.Warn(err)
 		}
 	}
 }

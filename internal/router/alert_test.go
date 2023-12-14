@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
@@ -25,6 +26,8 @@ var cnfg = &config.ServerConfig{
 }
 
 func TestAlertRouter(t *testing.T) {
+	err := logger.Init()
+	require.NoError(t, err)
 	strg := storage.NewInMemoryStorage()
 	ts := httptest.NewServer(AlertRouter(strg, cnfg))
 	defer ts.Close()

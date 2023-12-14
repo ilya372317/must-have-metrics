@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
@@ -9,14 +10,13 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
 
-var (
-	agentLogger = logger.Get()
-)
-
 func main() {
+	if err := logger.Init(); err != nil {
+		panic(fmt.Errorf("failed init logger for agent: %w", err))
+	}
 	cnfg, err := config.NewAgent()
 	if err != nil {
-		agentLogger.Panicf("failed get config: %v", err)
+		logger.Log.Panicf("failed get config: %v", err)
 	}
 	monitor := statistic.New()
 	go monitor.CollectStat(time.Duration(cnfg.PollInterval) * time.Second)

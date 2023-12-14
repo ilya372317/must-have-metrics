@@ -8,18 +8,17 @@ import (
 	"go.uber.org/zap"
 )
 
-var logger *zap.SugaredLogger
+var Log *zap.SugaredLogger
 
 const (
 	logPath           = "storage/log.txt"
 	logFolder         = "storage"
 	logFilePermission = 0750
-	basePath          = "../.."
 )
 
-func Get() *zap.SugaredLogger {
-	if logger != nil {
-		return logger
+func Init() error {
+	if Log != nil {
+		return nil
 	}
 	createLogFolderIfNotExists()
 	environment := os.Getenv("ENV")
@@ -29,20 +28,20 @@ func Get() *zap.SugaredLogger {
 		cnfg.OutputPaths = []string{path, "stdout"}
 		log, err := cnfg.Build()
 		if err != nil {
-			panic(fmt.Errorf("failed init zap logger in production: %w", err))
+			return fmt.Errorf("failed init zap logger in production: %w", err)
 		}
-		logger = log.Sugar()
+		Log = log.Sugar()
 	} else {
 		cnfg := zap.NewDevelopmentConfig()
 		cnfg.OutputPaths = []string{path, "stdout"}
 		log, err := cnfg.Build()
 		if err != nil {
-			panic(fmt.Errorf("failed init zap logger in development: %w", err))
+			return fmt.Errorf("failed init zap logger in development: %w", err)
 		}
-		logger = log.Sugar()
+		Log = log.Sugar()
 	}
 
-	return logger
+	return nil
 }
 
 func createLogFolderIfNotExists() {

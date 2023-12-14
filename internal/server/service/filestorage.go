@@ -27,7 +27,7 @@ func SaveDataToFilesystemByInterval(
 	for range ticker.C {
 		err := StoreToFilesystem(ctx, repository, serverConfig.FilePath)
 		if err != nil {
-			logger.Get().Fatalf("failed save data to filesystem: %v", err)
+			logger.Log.Fatalf("failed save data to filesystem: %v", err)
 			break
 		}
 	}

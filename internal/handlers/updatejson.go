@@ -12,8 +12,6 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/service"
 )
 
-var zapLogger = logger.Get()
-
 type UpdateJSONStorage interface {
 	Save(ctx context.Context, name string, alert entity.Alert) error
 	Update(ctx context.Context, name string, alert entity.Alert) error
@@ -40,18 +38,18 @@ func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerCon
 		newAlert, err := service.AddAlert(request.Context(), storage, metrics, serverConfig)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			zapLogger.Error(err)
+			logger.Log.Warn(err)
 			return
 		}
 		responseMetric := dto.NewMetricsDTOFromAlert(*newAlert)
 		response, err := json.Marshal(&responseMetric)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			zapLogger.Error(err)
+			logger.Log.Warn(err)
 			return
 		}
 		if _, err = writer.Write(response); err != nil {
-			zapLogger.Error(err)
+			logger.Log.Warn(err)
 		}
 	}
 }

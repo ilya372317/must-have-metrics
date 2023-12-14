@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/ilya372317/must-have-metrics/internal/dto"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/server/service"
 )
@@ -50,11 +51,11 @@ func BulkUpdate(storage BulkUpdateStorage) http.HandlerFunc {
 		response, err := json.Marshal(&responseMetricsList)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			zapLogger.Error(err)
+			logger.Log.Warn(err)
 			return
 		}
 		if _, err = writer.Write(response); err != nil {
-			zapLogger.Error(err)
+			logger.Log.Warn(err)
 		}
 	}
 }

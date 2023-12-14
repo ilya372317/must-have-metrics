@@ -10,18 +10,16 @@ import (
 
 const failedSaveDataErrPattern = "failed to save data on server: %v\n"
 
-var sendLogger = logger.Get()
-
 type ReportSender func(requestURL, body string)
 
 func SendReport(requestURL, body string) {
 	compressedData, errCompress := compress.Do([]byte(body))
 	if errCompress != nil {
-		sendLogger.Errorf(failedSaveDataErrPattern, errCompress)
+		logger.Log.Errorf(failedSaveDataErrPattern, errCompress)
 	}
 	request, errRequest := http.NewRequest(http.MethodPost, requestURL, bytes.NewReader(compressedData))
 	if errRequest != nil {
-		sendLogger.Errorf(failedSaveDataErrPattern, errRequest)
+		logger.Log.Errorf(failedSaveDataErrPattern, errRequest)
 		return
 	}
 	request.Header.Set("Content-Encoding", "gzip")
@@ -29,7 +27,7 @@ func SendReport(requestURL, body string) {
 	res, err := http.DefaultClient.Do(request)
 
 	if err != nil {
-		sendLogger.Errorf(failedSaveDataErrPattern, err)
+		logger.Log.Errorf(failedSaveDataErrPattern, err)
 		return
 	}
 	_ = res.Body.Close()

@@ -8,8 +8,6 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
 
-var sLogger = logger.Get()
-
 type (
 	responseData struct {
 		status int
@@ -52,7 +50,7 @@ func WithLogging() Middleware {
 
 			duration := time.Since(start)
 
-			sLogger.Infoln(
+			logger.Log.Infoln(
 				"uri", r.RequestURI,
 				"method", r.Method,
 				"duration", duration,

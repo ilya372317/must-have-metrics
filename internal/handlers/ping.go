@@ -10,8 +10,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-var pingLogger = logger.Get()
-
 func PingHandler(serverConfig *config.ServerConfig) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		db, err := sql.Open("pgx", serverConfig.DatabaseDSN)
@@ -31,10 +29,10 @@ func PingHandler(serverConfig *config.ServerConfig) http.HandlerFunc {
 			)
 		}
 		if err = db.Close(); err != nil {
-			pingLogger.Warnf("failed close connection with database: %v", err)
+			logger.Log.Warnf("failed close connection with database: %v", err)
 		}
 		if _, err = fmt.Fprint(writer, "pong"); err != nil {
-			pingLogger.Warnf("failed write data in response: %v", err)
+			logger.Log.Warnf("failed write data in response: %v", err)
 		}
 	}
 }

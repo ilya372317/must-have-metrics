@@ -124,7 +124,7 @@ func (d *DatabaseStorage) All(ctx context.Context) ([]entity.Alert, error) {
 			selectAllMetricsQuery)
 		defer func() {
 			if err = rows.Close(); err != nil {
-				logger.Get().Warnf(failedCloseRowsErrPattern, err)
+				logger.Log.Warnf(failedCloseRowsErrPattern, err)
 			}
 		}()
 		if err != nil {
@@ -200,7 +200,7 @@ func (d *DatabaseStorage) Fill(ctx context.Context, m map[string]entity.Alert) e
 		if err != nil {
 			err = tx.Rollback()
 			if err != nil {
-				logger.Get().Warnf(failedMakeRollbackErrPattern, err)
+				logger.Log.Warnf(failedMakeRollbackErrPattern, err)
 			}
 			return fmt.Errorf("failed to delete existing records: %w", err)
 		}
@@ -211,7 +211,7 @@ func (d *DatabaseStorage) Fill(ctx context.Context, m map[string]entity.Alert) e
 				id, alert.Type, alert.FloatValue, alert.IntValue)
 			if err != nil {
 				if err = tx.Rollback(); err != nil {
-					logger.Get().Warnf(failedMakeRollbackErrPattern, err)
+					logger.Log.Warnf(failedMakeRollbackErrPattern, err)
 				}
 				return fmt.Errorf("failed to insert alert with id %s: %w", id, err)
 			}
@@ -241,7 +241,7 @@ func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entit
 
 		if err != nil {
 			if err = tx.Rollback(); err != nil {
-				logger.Get().Warnf(failedRollbackErrPattern, err)
+				logger.Log.Warnf(failedRollbackErrPattern, err)
 			}
 			return fmt.Errorf("failed prepare query on update or insert: %w", err)
 		}
@@ -253,7 +253,7 @@ func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entit
 			_, err = preparedQuery.ExecContext(ctx, alert.Name, alert.Type, alert.FloatValue, alert.IntValue)
 			if err != nil {
 				if err = tx.Rollback(); err != nil {
-					logger.Get().Warnf(failedRollbackErrPattern, err)
+					logger.Log.Warnf(failedRollbackErrPattern, err)
 				}
 				return fmt.Errorf("failed insert alert %v: %w", alert, err)
 			}
@@ -294,7 +294,7 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 	}
 	defer func() {
 		err = rows.Close()
-		logger.Get().Warnf("failed close rows: %v", err)
+		logger.Log.Warnf("failed close rows: %v", err)
 	}()
 
 	var alerts []entity.Alert
