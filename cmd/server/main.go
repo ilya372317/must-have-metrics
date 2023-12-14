@@ -45,20 +45,20 @@ func run() error {
 		logger.Log.Fatalf("failed init postgres database: %v", err)
 	}
 
-	shouldConnectToDatabase := cnfg.DatabaseDSN != ""
-
-	if shouldConnectToDatabase {
+	if cnfg.ShouldConnectToDatabase() {
 		repository = &storage.DatabaseStorage{
 			DB: db,
 		}
 		runMigrations(db)
 	}
 
+	ctx := context.Background()
+
 	if cnfg.StoreInterval > 0 {
-		go service.SaveDataToFilesystemByInterval(context.Background(), cnfg, repository)
+		go service.SaveDataToFilesystemByInterval(ctx, cnfg, repository)
 	}
 	if cnfg.Restore {
-		if err = service.FillFromFilesystem(context.Background(), repository, cnfg.FilePath); err != nil {
+		if err = service.FillFromFilesystem(ctx, repository, cnfg.FilePath); err != nil {
 			logger.Log.Warn(err)
 		}
 	}

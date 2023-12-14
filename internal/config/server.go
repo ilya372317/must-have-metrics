@@ -41,3 +41,7 @@ func (c *ServerConfig) parseFlags() {
 	flag.StringVar(&c.DatabaseDSN, "d", "", "Database DSN string")
 	flag.Parse()
 }
+
+func (c *ServerConfig) ShouldConnectToDatabase() bool {
+	return c.DatabaseDSN != ""
+}
