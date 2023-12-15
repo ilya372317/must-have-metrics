@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -14,16 +15,14 @@ const (
 	jsonContentHeaderValue = "application/json"
 )
 
-var showLogger = logger.Get()
-
 type ShowJSONStorage interface {
-	Get(name string) (entity.Alert, error)
+	Get(ctx context.Context, name string) (entity.Alert, error)
 }
 
 func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set(contentTypeHeader, jsonContentHeaderValue)
-		metrics, err := dto.CreateMetricsDTOFromRequest(request)
+		metrics, err := dto.NewMetricsDTOFromRequest(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
@@ -35,12 +34,12 @@ func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
 			return
 		}
 
-		alert, err := storage.Get(showDTO.Name)
+		alert, err := storage.Get(request.Context(), showDTO.Name)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusNotFound)
 			return
 		}
-		metrics = dto.CreateMetricsDTOFromAlert(alert)
+		metrics = dto.NewMetricsDTOFromAlert(alert)
 		response, err := json.Marshal(&metrics)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -48,7 +47,7 @@ func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
 		}
 		_, err = writer.Write(response)
 		if err != nil {
-			showLogger.Error(err)
+			logger.Log.Warn(err)
 		}
 	}
 }

@@ -2,6 +2,7 @@ package router
 
 import (
 	"compress/gzip"
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
@@ -24,6 +26,8 @@ var cnfg = &config.ServerConfig{
 }
 
 func TestAlertRouter(t *testing.T) {
+	err := logger.Init()
+	require.NoError(t, err)
 	strg := storage.NewInMemoryStorage()
 	ts := httptest.NewServer(AlertRouter(strg, cnfg))
 	defer ts.Close()
@@ -288,6 +292,24 @@ func TestAlertRouter(t *testing.T) {
 			},
 			requestBody: "",
 		},
+		{
+			name:   "updates mass",
+			url:    "/updates",
+			method: http.MethodPost,
+			fields: map[string]testAlert{
+				"Some2": {
+					Type:       "counter",
+					Name:       "Some2",
+					FloatValue: 0,
+					IntValue:   2,
+				},
+			},
+			want: want{
+				status: http.StatusOK,
+				body:   `[{"id":"Some","type":"gauge","value":1.234234},{"id":"Some2","type":"counter","delta":4}]`,
+			},
+			requestBody: `[{"id":"Some","type":"gauge","value":1.234234},{"id":"Some2","type":"counter","delta":2}]`,
+		},
 	}
 
 	for _, tt := range testTable {
@@ -305,7 +327,8 @@ func TestAlertRouter(t *testing.T) {
 					intValue := tAlert.IntValue
 					alert.IntValue = &intValue
 				}
-				strg.Save(name, alert)
+				err := strg.Save(context.Background(), name, alert)
+				require.NoError(t, err)
 			}
 			resp, responseBody := testRequest(t, ts, tt.method, tt.url, tt.requestBody)
 			defer func() {

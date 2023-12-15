@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -11,13 +12,18 @@ import (
 )
 
 type IndexStorage interface {
-	All() []entity.Alert
+	All(ctx context.Context) ([]entity.Alert, error)
 }
 
 func IndexHandler(strg IndexStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "text/html")
-		allAlerts := strg.All()
+		allAlerts, err := strg.All(request.Context())
+		if err != nil {
+			http.Error(writer,
+				fmt.Sprintf("failed get data from storage: %v", err), http.StatusInternalServerError)
+			return
+		}
 		sort.SliceStable(allAlerts, func(i, j int) bool {
 			return allAlerts[i].Name < allAlerts[j].Name
 		})

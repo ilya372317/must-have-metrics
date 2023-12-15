@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,42 +16,66 @@ import (
 const filePermission = 0600
 
 type FilesystemSupportStorage interface {
-	AllWithKeys() map[string]entity.Alert
-	Fill(map[string]entity.Alert)
+	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
+	Fill(context.Context, map[string]entity.Alert) error
 }
 
-func SaveDataToFilesystemByInterval(serverConfig *config.ServerConfig, repository FilesystemSupportStorage) {
+func SaveDataToFilesystemByInterval(
+	ctx context.Context,
+	serverConfig *config.ServerConfig, repository FilesystemSupportStorage) {
 	ticker := time.NewTicker(time.Duration(serverConfig.StoreInterval) * time.Second)
-	for range ticker.C {
-		err := StoreToFilesystem(repository, serverConfig.FilePath)
-		if err != nil {
-			logger.Get().Fatalf("failed save data to filesystem: %v", err)
-			break
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Log.Info("SaveDataToFilesystemByInterval was cancelled")
+			return
+		case <-ticker.C:
+			err := StoreToFilesystem(ctx, repository, serverConfig.FilePath)
+			if err != nil {
+				logger.Log.Errorf("failed save data to filesystem: %v", err)
+				return
+			}
 		}
 	}
 }
 
-func FillFromFilesystem(storage FilesystemSupportStorage, filePath string) error {
-	records := storage.AllWithKeys()
-	if filePath == "" {
-		return errors.New("no need to save data in filesystem")
-	}
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return fmt.Errorf("failed fill storage from file system: %w", err)
-	}
+func FillFromFilesystem(ctx context.Context, storage FilesystemSupportStorage, filePath string) error {
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+		records, err := storage.AllWithKeys(ctx)
+		if err != nil {
+			return fmt.Errorf("failed get all records with keys: %w", err)
+		}
+		if filePath == "" {
+			return errors.New("no need to save data in filesystem")
+		}
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed fill storage from file system: %w", err)
+		}
 
-	if err = json.Unmarshal(data, &records); err != nil {
-		return fmt.Errorf("metrics in file is invalid: %w", err)
+		if err = json.Unmarshal(data, &records); err != nil {
+			return fmt.Errorf("metrics in file is invalid: %w", err)
+		}
+
+		if err = storage.Fill(ctx, records); err != nil {
+			return fmt.Errorf("failed fill items: %w", err)
+		}
+
+		return nil
 	}
-
-	storage.Fill(records)
-
-	return nil
 }
 
-func StoreToFilesystem(storage FilesystemSupportStorage, filepath string) error {
-	data, err := json.Marshal(storage.AllWithKeys())
+func StoreToFilesystem(ctx context.Context, storage FilesystemSupportStorage, filepath string) error {
+	allItemsWithKeys, err := storage.AllWithKeys(ctx)
+	if err != nil {
+		return fmt.Errorf("failed get all items: %w", err)
+	}
+	data, err := json.Marshal(allItemsWithKeys)
 	if err != nil {
 		return fmt.Errorf("failed serialize metrics: %w", err)
 	}

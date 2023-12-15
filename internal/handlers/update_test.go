@@ -225,7 +225,8 @@ func TestUpdateHandler(t *testing.T) {
 					intValue := tAlert.IntValue
 					alert.IntValue = &intValue
 				}
-				repo.Save(name, alert)
+				err = repo.Save(context.Background(), name, alert)
+				require.NoError(t, err)
 			}
 
 			handler := UpdateHandler(repo, serverConfig)
@@ -238,7 +239,7 @@ func TestUpdateHandler(t *testing.T) {
 				return
 			}
 
-			addedAlert, err := repo.Get(tt.query.name)
+			addedAlert, err := repo.Get(context.Background(), tt.query.name)
 			assert.NoError(t, err)
 
 			wantAlert := entity.Alert{

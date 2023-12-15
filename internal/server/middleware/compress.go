@@ -15,8 +15,6 @@ const (
 	gzipEncoding          = "gzip"
 )
 
-var compressLogger = logger.Get()
-
 const (
 	LastPositiveStatusCode       = 300
 	failedCompressDataErrPattern = "failed compress data: %w"
@@ -121,7 +119,7 @@ func Compressed() Middleware {
 				cr, err := newReader(r.Body)
 				if err != nil {
 					http.Error(w, "failed create gzip compressor", http.StatusInternalServerError)
-					compressLogger.Errorf("something went wrong with gzip compressor: %v", err)
+					logger.Log.Warnf("something went wrong with gzip compressor: %v", err)
 					return
 				}
 				r.Body = cr

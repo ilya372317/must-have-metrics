@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -11,45 +12,44 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/service"
 )
 
-var zapLogger = logger.Get()
-
 type UpdateJSONStorage interface {
-	Save(name string, alert entity.Alert)
-	Update(name string, alert entity.Alert) error
-	Get(name string) (entity.Alert, error)
-	Has(name string) bool
-	AllWithKeys() map[string]entity.Alert
-	Fill(map[string]entity.Alert)
+	Save(ctx context.Context, name string, alert entity.Alert) error
+	Update(ctx context.Context, name string, alert entity.Alert) error
+	Get(ctx context.Context, name string) (entity.Alert, error)
+	Has(ctx context.Context, name string) (bool, error)
+	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
+	Fill(context.Context, map[string]entity.Alert) error
+	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
+	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
 }
 
 func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
-		metrics, err := dto.CreateMetricsDTOFromRequest(request)
+		metrics, err := dto.NewMetricsDTOFromRequest(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-		updateDTO := dto.CreateUpdateAlertDTOFromMetrics(metrics)
-		if isValid, validErr := updateDTO.Validate(); !isValid {
+		if isValid, validErr := metrics.Validate(); !isValid {
 			http.Error(writer, validErr.Error(), http.StatusBadRequest)
 			return
 		}
-		newAlert, err := service.AddAlert(storage, updateDTO, serverConfig)
+		newAlert, err := service.AddAlert(request.Context(), storage, metrics, serverConfig)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			zapLogger.Error(err)
+			logger.Log.Warn(err)
 			return
 		}
-		responseMetric := dto.CreateMetricsDTOFromAlert(*newAlert)
+		responseMetric := dto.NewMetricsDTOFromAlert(*newAlert)
 		response, err := json.Marshal(&responseMetric)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
-			zapLogger.Error(err)
+			logger.Log.Warn(err)
 			return
 		}
 		if _, err = writer.Write(response); err != nil {
-			zapLogger.Error(err)
+			logger.Log.Warn(err)
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"os"
 	"sort"
 	"testing"
@@ -30,7 +31,7 @@ type testAlert struct {
 func Test_addAlert(t *testing.T) {
 	type args struct {
 		repo *storage.InMemoryStorage
-		dto  dto.UpdateAlertDTO
+		dto  dto.Metrics
 	}
 	tests := []struct {
 		name    string
@@ -43,10 +44,10 @@ func Test_addAlert(t *testing.T) {
 			name: "success counter empty storage case",
 			args: args{
 				repo: storage.NewInMemoryStorage(),
-				dto: dto.UpdateAlertDTO{
-					Type: "counter",
-					Name: "alert",
-					Data: "10",
+				dto: dto.Metrics{
+					MType: "counter",
+					ID:    "alert",
+					Delta: intPointer(10),
 				},
 			},
 			fields:  map[string]testAlert{},
@@ -61,10 +62,10 @@ func Test_addAlert(t *testing.T) {
 			name: "success counter not empty storage case",
 			args: args{
 				repo: storage.NewInMemoryStorage(),
-				dto: dto.UpdateAlertDTO{
-					Type: "counter",
-					Name: "alert",
-					Data: "10",
+				dto: dto.Metrics{
+					MType: "counter",
+					ID:    "alert",
+					Delta: intPointer(10),
 				},
 			},
 			fields: map[string]testAlert{
@@ -85,10 +86,10 @@ func Test_addAlert(t *testing.T) {
 			name: "success gauge empty storage case",
 			args: args{
 				repo: storage.NewInMemoryStorage(),
-				dto: dto.UpdateAlertDTO{
-					Type: "gauge",
-					Name: "alert",
-					Data: "1.1",
+				dto: dto.Metrics{
+					MType: "gauge",
+					ID:    "alert",
+					Value: floatPointer(1.1),
 				},
 			},
 			fields:  map[string]testAlert{},
@@ -103,10 +104,10 @@ func Test_addAlert(t *testing.T) {
 			name: "success gauge not empty storage case",
 			args: args{
 				repo: storage.NewInMemoryStorage(),
-				dto: dto.UpdateAlertDTO{
-					Type: "gauge",
-					Name: "alert",
-					Data: "1.2",
+				dto: dto.Metrics{
+					MType: "gauge",
+					ID:    "alert",
+					Value: floatPointer(1.2),
 				},
 			},
 			fields: map[string]testAlert{
@@ -123,42 +124,15 @@ func Test_addAlert(t *testing.T) {
 				FloatValue: 1.2,
 			},
 		},
-		{
-			name: "negative gauge invalid value case",
-			args: args{
-				repo: storage.NewInMemoryStorage(),
-				dto: dto.UpdateAlertDTO{
-					Type: "gauge",
-					Name: "alert",
-					Data: "invalid value",
-				},
-			},
-			fields:  map[string]testAlert{},
-			wantErr: true,
-			want:    testAlert{},
-		},
-		{
-			name: "negative counter invalid value case",
-			args: args{
-				repo: storage.NewInMemoryStorage(),
-				dto: dto.UpdateAlertDTO{
-					Type: "counter",
-					Name: "alert",
-					Data: "invalid data",
-				},
-			},
-			fields:  map[string]testAlert{},
-			wantErr: true,
-			want:    testAlert{},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				tt.args.repo.Save(name, newAlertFromTestAlert(alert))
+				err := tt.args.repo.Save(context.Background(), name, newAlertFromTestAlert(alert))
+				require.NoError(t, err)
 			}
 
-			_, err := AddAlert(tt.args.repo, tt.args.dto, serverConfig)
+			_, err := AddAlert(context.Background(), tt.args.repo, tt.args.dto, serverConfig)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -166,7 +140,7 @@ func Test_addAlert(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			addedAlert, addAlertErr := tt.args.repo.Get(tt.args.dto.Name)
+			addedAlert, addAlertErr := tt.args.repo.Get(context.Background(), tt.args.dto.ID)
 			require.NoError(t, addAlertErr)
 			assert.Equal(t, addedAlert, newAlertFromTestAlert(tt.want))
 		})
@@ -175,7 +149,7 @@ func Test_addAlert(t *testing.T) {
 
 func Test_updateCounterAlert(t *testing.T) {
 	type args struct {
-		dto  dto.UpdateAlertDTO
+		dto  dto.Metrics
 		repo *storage.InMemoryStorage
 	}
 	tests := []struct {
@@ -188,10 +162,10 @@ func Test_updateCounterAlert(t *testing.T) {
 		{
 			name: "success case with empty storage",
 			args: args{
-				dto: dto.UpdateAlertDTO{
-					Type: "counter",
-					Name: "alert",
-					Data: "10",
+				dto: dto.Metrics{
+					MType: "counter",
+					ID:    "alert",
+					Delta: intPointer(10),
 				},
 				repo: storage.NewInMemoryStorage(),
 			},
@@ -206,10 +180,10 @@ func Test_updateCounterAlert(t *testing.T) {
 		{
 			name: "success case with value in storage",
 			args: args{
-				dto: dto.UpdateAlertDTO{
-					Type: "counter",
-					Name: "alert",
-					Data: "10",
+				dto: dto.Metrics{
+					MType: "counter",
+					ID:    "alert",
+					Delta: intPointer(10),
 				},
 				repo: storage.NewInMemoryStorage(),
 			},
@@ -227,35 +201,22 @@ func Test_updateCounterAlert(t *testing.T) {
 				IntValue: int64(20),
 			},
 		},
-		{
-			name: "negative parse int case",
-			args: args{
-				dto: dto.UpdateAlertDTO{
-					Type: "counter",
-					Name: "alert",
-					Data: "invalid data",
-				},
-				repo: storage.NewInMemoryStorage(),
-			},
-			fields:  map[string]testAlert{},
-			wantErr: true,
-			want:    testAlert{},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, alert := range tt.fields {
-				tt.args.repo.Save(name, newAlertFromTestAlert(alert))
+				err := tt.args.repo.Save(context.Background(), name, newAlertFromTestAlert(alert))
+				require.NoError(t, err)
 			}
 
-			_, err := updateCounterAlert(tt.args.dto, tt.args.repo)
+			_, err := updateCounterAlert(context.Background(), tt.args.dto, tt.args.repo)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			} else {
 				assert.NoError(t, err)
 			}
-			updatedAlert, getAlertErr := tt.args.repo.Get(tt.args.dto.Name)
+			updatedAlert, getAlertErr := tt.args.repo.Get(context.Background(), tt.args.dto.ID)
 			require.NoError(t, getAlertErr)
 			assert.Equal(t, updatedAlert, newAlertFromTestAlert(tt.want))
 		})
@@ -264,7 +225,7 @@ func Test_updateCounterAlert(t *testing.T) {
 
 func Test_updateGaugeAlert(t *testing.T) {
 	type args struct {
-		dto        dto.UpdateAlertDTO
+		dto        dto.Metrics
 		repository *storage.InMemoryStorage
 	}
 	tests := []struct {
@@ -276,10 +237,10 @@ func Test_updateGaugeAlert(t *testing.T) {
 		{
 			name: "positive test",
 			args: args{
-				dto: dto.UpdateAlertDTO{
-					Type: "gauge",
-					Name: "alert",
-					Data: "1.12",
+				dto: dto.Metrics{
+					MType: "gauge",
+					ID:    "alert",
+					Value: floatPointer(1.12),
 				},
 				repository: storage.NewInMemoryStorage(),
 			},
@@ -293,10 +254,10 @@ func Test_updateGaugeAlert(t *testing.T) {
 		{
 			name: "parse integer value",
 			args: args{
-				dto: dto.UpdateAlertDTO{
-					Type: "gauge",
-					Name: "alert",
-					Data: "1",
+				dto: dto.Metrics{
+					MType: "gauge",
+					ID:    "alert",
+					Value: floatPointer(1),
 				},
 				repository: storage.NewInMemoryStorage(),
 			},
@@ -307,30 +268,17 @@ func Test_updateGaugeAlert(t *testing.T) {
 				FloatValue: 1.0,
 			},
 		},
-		{
-			name: "negative parse float",
-			args: args{
-				dto: dto.UpdateAlertDTO{
-					Type: "gauge",
-					Name: "alert",
-					Data: "invalid data",
-				},
-				repository: storage.NewInMemoryStorage(),
-			},
-			wantErr: true,
-			want:    testAlert{},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := updateGaugeAlert(tt.args.dto, tt.args.repository)
+			_, err := updateGaugeAlert(context.Background(), tt.args.dto, tt.args.repository)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			} else {
 				require.NoError(t, err)
 			}
-			expectedAlert, getAlertError := tt.args.repository.Get(tt.args.dto.Name)
+			expectedAlert, getAlertError := tt.args.repository.Get(context.Background(), tt.args.dto.ID)
 			require.NoError(t, getAlertError)
 			assert.Equal(t, newAlertFromTestAlert(tt.want), expectedAlert)
 		})
@@ -410,21 +358,22 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 		memoryStorage := storage.NewInMemoryStorage()
 		t.Run(tt.name, func(t *testing.T) {
 			for _, alert := range tt.items {
-				memoryStorage.Save(alert.Name, newAlertFromTestAlert(alert))
+				err := memoryStorage.Save(context.Background(), alert.Name, newAlertFromTestAlert(alert))
+				require.NoError(t, err)
 			}
 
-			errStore := StoreToFilesystem(memoryStorage, tt.filepath)
+			errStore := StoreToFilesystem(context.Background(), memoryStorage, tt.filepath)
 			if tt.wantFillErr {
 				assert.Error(t, errStore)
 				return
 			} else {
 				require.NoError(t, errStore)
 			}
-			expect := memoryStorage.All()
+			expect, _ := memoryStorage.All(context.Background())
 
 			memoryStorage.Reset()
 
-			errFill := FillFromFilesystem(memoryStorage, tt.filepath)
+			errFill := FillFromFilesystem(context.Background(), memoryStorage, tt.filepath)
 			if tt.wantRestoreErr {
 				assert.Error(t, errFill)
 				return
@@ -432,7 +381,7 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 				require.NoError(t, errFill)
 			}
 
-			got := memoryStorage.All()
+			got, _ := memoryStorage.All(context.Background())
 			sort.SliceStable(expect, func(i, j int) bool {
 				return expect[i].Name > expect[j].Name
 			})
@@ -446,4 +395,12 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 			memoryStorage.Reset()
 		})
 	}
+}
+
+func intPointer(value int64) *int64 {
+	return &value
+}
+
+func floatPointer(value float64) *float64 {
+	return &value
 }

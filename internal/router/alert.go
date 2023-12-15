@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -11,13 +12,16 @@ import (
 )
 
 type AlertStorage interface {
-	Save(name string, alert entity.Alert)
-	Update(name string, alert entity.Alert) error
-	Get(name string) (entity.Alert, error)
-	Has(name string) bool
-	All() []entity.Alert
-	AllWithKeys() map[string]entity.Alert
-	Fill(map[string]entity.Alert)
+	Save(ctx context.Context, name string, alert entity.Alert) error
+	Update(ctx context.Context, name string, alert entity.Alert) error
+	Get(ctx context.Context, name string) (entity.Alert, error)
+	Has(ctx context.Context, name string) (bool, error)
+	All(ctx context.Context) ([]entity.Alert, error)
+	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
+	Fill(context.Context, map[string]entity.Alert) error
+	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
+	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
+	Ping() error
 }
 
 func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
@@ -25,9 +29,13 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 	router.Use(middleware.WithLogging())
 	router.Use(middleware.Compressed())
 	router.Get("/", handlers.IndexHandler(repository))
+	router.Get("/ping", handlers.PingHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
 		r.Post("/", handlers.UpdateJSONHandler(repository, serverConfig))
+	})
+	router.Route("/updates", func(r chi.Router) {
+		r.Post("/", handlers.BulkUpdate(repository))
 	})
 	router.Route("/value", func(r chi.Router) {
 		r.Post("/", handlers.ShowJSONHandler(repository))
