@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
+	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/utils"
@@ -76,19 +77,19 @@ func (monitor *Monitor) collectStat(rtm *runtime.MemStats) {
 	monitor.updatePollCount()
 }
 
-func (monitor *Monitor) ReportStat(host string, reportInterval time.Duration, reportSender sender.ReportSender) {
+func (monitor *Monitor) ReportStat(agentConfig *config.AgentConfig, reportInterval time.Duration, reportSender sender.ReportSender) {
 	ticker := time.NewTicker(reportInterval)
 	for range ticker.C {
 		monitor.Lock()
-		monitor.reportStat(host, reportSender)
+		monitor.reportStat(agentConfig, reportSender)
 		monitor.Unlock()
 	}
 }
 
-func (monitor *Monitor) reportStat(host string, reportSender sender.ReportSender) {
-	requestURL := createURLForReportStat(host)
+func (monitor *Monitor) reportStat(agentConfig *config.AgentConfig, reportSender sender.ReportSender) {
+	requestURL := createURLForReportStat(agentConfig.Host)
 	body := createBody(monitor.Data)
-	reportSender(requestURL, body)
+	reportSender(agentConfig, requestURL, body)
 	monitor.resetPollCount()
 }
 

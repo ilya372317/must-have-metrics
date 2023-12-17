@@ -21,7 +21,7 @@ func main() {
 	monitor := statistic.New()
 	go monitor.CollectStat(time.Duration(cnfg.PollInterval) * time.Second)
 	go monitor.ReportStat(
-		cnfg.Host,
+		cnfg,
 		time.Duration(cnfg.ReportInterval)*time.Second,
 		sender.SendReport,
 	)

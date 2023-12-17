@@ -13,6 +13,7 @@ type ServerConfig struct {
 	Restore       bool   `env:"RESTORE"`
 	StoreInterval uint   `env:"STORE_INTERVAL"`
 	DatabaseDSN   string `env:"DATABASE_DSN"`
+	SecretKey     string `env:"KEY"`
 }
 
 func NewServer() (*ServerConfig, error) {
@@ -39,6 +40,7 @@ func (c *ServerConfig) parseFlags() {
 		"interval saving metrics in file",
 	)
 	flag.StringVar(&c.DatabaseDSN, "d", "", "Database DSN string")
+	flag.StringVar(&c.SecretKey, "k", "", "Secret key for sign")
 	flag.Parse()
 }
 

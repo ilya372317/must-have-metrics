@@ -11,6 +11,7 @@ type AgentConfig struct {
 	Host           string `env:"ADDRESS"`
 	PollInterval   uint   `env:"POLL_INTERVAL"`
 	ReportInterval uint   `env:"REPORT_INTERVAL"`
+	SecretKey      string `env:"KEY"`
 }
 
 func NewAgent() (*AgentConfig, error) {
@@ -30,5 +31,10 @@ func (c *AgentConfig) parseFlags() {
 	)
 	flag.UintVar(&c.PollInterval, "p", 2, "interval agent collect metrics")
 	flag.UintVar(&c.ReportInterval, "r", 10, "interval agent send metrics on server")
+	flag.StringVar(&c.SecretKey, "k", "", "Secret key for sign")
 	flag.Parse()
+}
+
+func (c *AgentConfig) ShouldSignData() bool {
+	return c.SecretKey != ""
 }
