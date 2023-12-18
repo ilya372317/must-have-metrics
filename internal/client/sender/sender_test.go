@@ -35,7 +35,7 @@ func Test_createSign(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := []byte(createSign(tt.arg.src, tt.arg.key))
+			got := createSign([]byte(tt.arg.src), tt.arg.key)
 
 			h := hmac.New(sha256.New, []byte(tt.arg.key))
 			h.Write([]byte(tt.arg.src))

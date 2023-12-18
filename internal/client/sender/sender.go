@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"net/http"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
@@ -28,12 +29,12 @@ func SendReport(agentConfig *config.AgentConfig, requestURL, body string) {
 	request.Header.Set("Content-Encoding", "gzip")
 
 	if agentConfig.ShouldSignData() {
-		sign := createSign(body, agentConfig.SecretKey)
-		request.Header.Set("HashSHA256", sign)
+		sign := createSign([]byte(body), agentConfig.SecretKey)
+		encodeSing := base64.StdEncoding.EncodeToString(sign)
+		request.Header.Set("HashSHA256", encodeSing)
 	}
 
 	res, err := http.DefaultClient.Do(request)
-
 	if err != nil {
 		logger.Log.Errorf(failedSaveDataErrPattern, err)
 		return
@@ -41,9 +42,8 @@ func SendReport(agentConfig *config.AgentConfig, requestURL, body string) {
 	_ = res.Body.Close()
 }
 
-func createSign(body, secretKey string) string {
-	data := []byte(body)
+func createSign(body []byte, secretKey string) []byte {
 	h := hmac.New(sha256.New, []byte(secretKey))
-	h.Write(data)
-	return string(h.Sum(nil))
+	h.Write(body)
+	return h.Sum(nil)
 }

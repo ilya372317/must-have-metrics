@@ -26,8 +26,7 @@ type AlertStorage interface {
 
 func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
 	router := chi.NewRouter()
-	router.Use(middleware.WithLogging())
-	router.Use(middleware.Compressed())
+	router.Use(middleware.WithLogging(), middleware.Compressed(), middleware.Signature(serverConfig))
 	router.Get("/", handlers.IndexHandler(repository))
 	router.Get("/ping", handlers.PingHandler(repository))
 	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))

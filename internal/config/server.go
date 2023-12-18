@@ -47,3 +47,7 @@ func (c *ServerConfig) parseFlags() {
 func (c *ServerConfig) ShouldConnectToDatabase() bool {
 	return c.DatabaseDSN != ""
 }
+
+func (c *ServerConfig) ShouldSignData() bool {
+	return c.SecretKey != ""
+}
