@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
@@ -27,15 +26,6 @@ type UpdateJSONStorage interface {
 func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
-		isSignCorrect, err := isCorrectSigned(serverConfig, request)
-		if err != nil {
-			http.Error(writer, fmt.Sprintf("failed check sign: %v", err), http.StatusInternalServerError)
-			return
-		}
-		if !isSignCorrect {
-			http.Error(writer, "invalid sign", http.StatusBadRequest)
-			return
-		}
 		metrics, err := dto.NewMetricsDTOFromRequest(request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -58,7 +48,6 @@ func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerCon
 			logger.Log.Warn(err)
 			return
 		}
-		setSign(writer, serverConfig, response)
 		if _, err = writer.Write(response); err != nil {
 			logger.Log.Warn(err)
 		}
