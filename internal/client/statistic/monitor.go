@@ -5,13 +5,18 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/utils"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 const counterName = "PollCount"
@@ -19,16 +24,23 @@ const randomValueName = "RandomValue"
 const minRandomValue = 1
 const maxRandomValue = 50
 
+var counterValue = 0
+
 type Monitor struct {
-	Data map[string]MonitorValue
+	DataCh chan MonitorValue
 	sync.Mutex
 }
 
 func New() Monitor {
-	return Monitor{Data: make(map[string]MonitorValue)}
+	return Monitor{DataCh: make(chan MonitorValue, 10)}
+}
+
+func (monitor *Monitor) Shutdown() {
+	close(monitor.DataCh)
 }
 
 type MonitorValue struct {
+	Name  string
 	Value *uint64
 	Delta *int
 	Type  string
@@ -36,97 +48,128 @@ type MonitorValue struct {
 
 func (monitor *Monitor) CollectStat(pollInterval time.Duration) {
 	ticker := time.NewTicker(pollInterval)
-	rtm := runtime.MemStats{}
 	for range ticker.C {
-		runtime.ReadMemStats(&rtm)
-		monitor.Lock()
-		monitor.collectStat(&rtm)
-		monitor.Unlock()
+		monitor.collectStat()
+		monitor.collectMemStat()
 	}
 }
 
-func (monitor *Monitor) collectStat(rtm *runtime.MemStats) {
-	monitor.setGaugeValue("Alloc", rtm.Alloc)
-	monitor.setGaugeValue("BuckHashSys", rtm.BuckHashSys)
-	monitor.setGaugeValue("GCSys", rtm.GCSys)
-	monitor.setGaugeValue("HeapAlloc", rtm.HeapAlloc)
-	monitor.setGaugeValue("HeapIdle", rtm.HeapIdle)
-	monitor.setGaugeValue("HeapInuse", rtm.HeapInuse)
-	monitor.setGaugeValue("HeapObjects", rtm.HeapObjects)
-	monitor.setGaugeValue("HeapReleased", rtm.HeapReleased)
-	monitor.setGaugeValue("HeapSys", rtm.HeapSys)
-	monitor.setGaugeValue("LastGC", rtm.LastGC)
-	monitor.setGaugeValue("Lookups", rtm.Lookups)
-	monitor.setGaugeValue("MCacheInuse", rtm.MCacheInuse)
-	monitor.setGaugeValue("MCacheSys", rtm.MCacheSys)
-	monitor.setGaugeValue("MSpanInuse", rtm.MSpanInuse)
-	monitor.setGaugeValue("MSpanSys", rtm.MSpanSys)
-	monitor.setGaugeValue("Mallocs", rtm.Mallocs)
-	monitor.setGaugeValue("NextGC", rtm.NextGC)
-	monitor.setGaugeValue("OtherSys", rtm.OtherSys)
-	monitor.setGaugeValue("PauseTotalNs", rtm.PauseTotalNs)
-	monitor.setGaugeValue("StackInuse", rtm.StackInuse)
-	monitor.setGaugeValue("StackSys", rtm.StackSys)
-	monitor.setGaugeValue("Sys", rtm.Sys)
-	monitor.setGaugeValue("TotalAlloc", rtm.TotalAlloc)
-	monitor.setGaugeValue("Frees", rtm.Frees)
-	monitor.setGaugeValue("NumGC", uint64(rtm.NumGC))
-	monitor.setGaugeValue("NumForcedGC", uint64(rtm.NumForcedGC))
-	monitor.setGaugeValue("GCCPUFraction", uint64(rtm.GCCPUFraction))
-	monitor.setGaugeValue(randomValueName, uint64(utils.GetRandomValue(minRandomValue, maxRandomValue)))
-	monitor.updatePollCount()
+func (monitor *Monitor) collectMemStat() {
+	go func() {
+		m, err := mem.VirtualMemory()
+		if err != nil {
+			logger.Log.Warnf("failed read virtual memory stats: %v", err)
+			return
+		}
+
+		monitor.sendGaugeValue("TotalMemory", m.Total)
+		monitor.sendGaugeValue("FreeMemory", m.Free)
+
+		cpuPercentages, err := cpu.Percent(0, true)
+		if err != nil {
+			logger.Log.Warnf("failed read cpu stats: %v", err)
+			return
+		}
+		for i, cpuUsage := range cpuPercentages {
+			monitor.sendGaugeValue(fmt.Sprintf("CPUutilization%d", i+1), uint64(cpuUsage))
+		}
+	}()
 }
 
-func (monitor *Monitor) ReportStat(agentConfig *config.AgentConfig, reportInterval time.Duration, reportSender sender.ReportSender) {
+func (monitor *Monitor) collectStat() {
+	go func() {
+		rtm := runtime.MemStats{}
+		runtime.ReadMemStats(&rtm)
+		monitor.sendGaugeValue("Alloc", rtm.Alloc)
+		monitor.sendGaugeValue("BuckHashSys", rtm.BuckHashSys)
+		monitor.sendGaugeValue("GCSys", rtm.GCSys)
+		monitor.sendGaugeValue("HeapAlloc", rtm.HeapAlloc)
+		monitor.sendGaugeValue("HeapIdle", rtm.HeapIdle)
+		monitor.sendGaugeValue("HeapInuse", rtm.HeapInuse)
+		monitor.sendGaugeValue("HeapObjects", rtm.HeapObjects)
+		monitor.sendGaugeValue("HeapReleased", rtm.HeapReleased)
+		monitor.sendGaugeValue("HeapSys", rtm.HeapSys)
+		monitor.sendGaugeValue("LastGC", rtm.LastGC)
+		monitor.sendGaugeValue("Lookups", rtm.Lookups)
+		monitor.sendGaugeValue("MCacheInuse", rtm.MCacheInuse)
+		monitor.sendGaugeValue("MCacheSys", rtm.MCacheSys)
+		monitor.sendGaugeValue("MSpanInuse", rtm.MSpanInuse)
+		monitor.sendGaugeValue("MSpanSys", rtm.MSpanSys)
+		monitor.sendGaugeValue("Mallocs", rtm.Mallocs)
+		monitor.sendGaugeValue("NextGC", rtm.NextGC)
+		monitor.sendGaugeValue("OtherSys", rtm.OtherSys)
+		monitor.sendGaugeValue("PauseTotalNs", rtm.PauseTotalNs)
+		monitor.sendGaugeValue("StackInuse", rtm.StackInuse)
+		monitor.sendGaugeValue("StackSys", rtm.StackSys)
+		monitor.sendGaugeValue("Sys", rtm.Sys)
+		monitor.sendGaugeValue("TotalAlloc", rtm.TotalAlloc)
+		monitor.sendGaugeValue("Frees", rtm.Frees)
+		monitor.sendGaugeValue("NumGC", uint64(rtm.NumGC))
+		monitor.sendGaugeValue("NumForcedGC", uint64(rtm.NumForcedGC))
+		monitor.sendGaugeValue("GCCPUFraction", uint64(rtm.GCCPUFraction))
+		monitor.sendGaugeValue(randomValueName, uint64(utils.GetRandomValue(minRandomValue, maxRandomValue)))
+		monitor.updatePollCount()
+	}()
+
+}
+
+func (monitor *Monitor) ReportStat(agentConfig *config.AgentConfig, reportInterval time.Duration,
+	reportSender sender.ReportSender) {
 	ticker := time.NewTicker(reportInterval)
 	for range ticker.C {
-		monitor.Lock()
-		monitor.reportStat(agentConfig, reportSender)
-		monitor.Unlock()
+		for w := uint(0); w < agentConfig.RateLimit; w++ {
+			go monitor.reportStat(agentConfig, reportSender)
+		}
 	}
 }
 
 func (monitor *Monitor) reportStat(agentConfig *config.AgentConfig, reportSender sender.ReportSender) {
+	data := make([]MonitorValue, 0, len(monitor.DataCh))
+loop:
+	for {
+		select {
+		case value := <-monitor.DataCh:
+			data = append(data, value)
+		default:
+			break loop
+		}
+	}
+
+	if len(data) == 0 {
+		return
+	}
 	requestURL := createURLForReportStat(agentConfig.Host)
-	body := createBody(monitor.Data)
+	body := createBody(data)
 	reportSender(agentConfig, requestURL, body)
 	monitor.resetPollCount()
 }
 
-func (monitor *Monitor) setGaugeValue(name string, value uint64) {
-	monitor.Data[name] = MonitorValue{
-		Type:  entity.TypeGauge,
+func (monitor *Monitor) sendGaugeValue(name string, value uint64) {
+	monitor.DataCh <- MonitorValue{
+		Name:  name,
 		Value: &value,
+		Type:  entity.TypeGauge,
 	}
 }
 
 func (monitor *Monitor) updatePollCount() {
-	_, ok := monitor.Data[counterName]
-	if !ok {
-		firstValue := 1
-		monitor.Data[counterName] = MonitorValue{Type: entity.TypeCounter, Delta: &firstValue}
-		return
-	}
-	oldValue := monitor.Data[counterName].Delta
-	newValue := *oldValue + 1
-	monitor.Data[counterName] = MonitorValue{
+	value := int(atomic.AddInt64((*int64)(unsafe.Pointer(&counterValue)), 1))
+	monitor.DataCh <- MonitorValue{
+		Name:  counterName,
+		Delta: &value,
 		Type:  entity.TypeCounter,
-		Delta: &newValue,
-	}
-}
-func (monitor *Monitor) resetPollCount() {
-	nullValue := 0
-	monitor.Data[counterName] = MonitorValue{
-		Type:  entity.TypeCounter,
-		Delta: &nullValue,
 	}
 }
 
-func createBody(data map[string]MonitorValue) string {
+func (monitor *Monitor) resetPollCount() {
+	atomic.StoreInt64((*int64)(unsafe.Pointer(&counterValue)), 0)
+}
+
+func createBody(data []MonitorValue) string {
 	metricsList := make([]dto.Metrics, 0, len(data))
-	for name, monitorValue := range data {
+	for _, monitorValue := range data {
 		m := dto.Metrics{
-			ID:    name,
+			ID:    monitorValue.Name,
 			MType: monitorValue.Type,
 		}
 		if monitorValue.Type == entity.TypeCounter {
