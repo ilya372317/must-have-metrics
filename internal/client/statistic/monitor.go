@@ -166,12 +166,13 @@ func (monitor *Monitor) updatePollCount() {
 	_, ok := monitor.Data[counterName]
 	if !ok {
 		firstValue := 1
-		monitor.Data[counterName] = MonitorValue{Type: entity.TypeCounter, Delta: &firstValue}
+		monitor.Data[counterName] = MonitorValue{Name: counterName, Type: entity.TypeCounter, Delta: &firstValue}
 		return
 	}
 	oldValue := monitor.Data[counterName].Delta
 	newValue := *oldValue + 1
 	monitor.Data[counterName] = MonitorValue{
+		Name:  counterName,
 		Type:  entity.TypeCounter,
 		Delta: &newValue,
 	}
@@ -179,6 +180,7 @@ func (monitor *Monitor) updatePollCount() {
 func (monitor *Monitor) resetPollCount() {
 	nullValue := 0
 	monitor.Data[counterName] = MonitorValue{
+		Name:  counterName,
 		Type:  entity.TypeCounter,
 		Delta: &nullValue,
 	}
