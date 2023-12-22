@@ -36,7 +36,7 @@ type Monitor struct {
 
 func New(rateLimit uint) *Monitor {
 	m := &Monitor{
-		DataCh:        make(chan MonitorValue, 10),
+		DataCh:        make(chan MonitorValue),
 		CollectTaskCh: make(chan func(), rateLimit),
 		ReportTaskCh:  make(chan func(), collectWorkerCount),
 	}
