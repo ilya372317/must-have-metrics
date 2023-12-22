@@ -21,7 +21,7 @@ const counterName = "PollCount"
 const randomValueName = "RandomValue"
 const minRandomValue = 1
 const maxRandomValue = 50
-const chunkForRequestSize = 20
+const chunkForRequestSize = 50
 
 type Monitor struct {
 	Data         map[string]MonitorValue
