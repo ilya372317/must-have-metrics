@@ -23,38 +23,51 @@ const counterName = "PollCount"
 const randomValueName = "RandomValue"
 const minRandomValue = 1
 const maxRandomValue = 50
+const collectWorkerCount = 4
 
 var counterValue = 0
 
 type Monitor struct {
-	DataCh    chan MonitorValue
-	TaskCh    chan func()
-	WaitGroup sync.WaitGroup
+	DataCh        chan MonitorValue
+	CollectTaskCh chan func()
+	ReportTaskCh  chan func()
+	WaitGroup     sync.WaitGroup
 }
 
-func New(workerCount uint) *Monitor {
+func New(rateLimit uint) *Monitor {
 	m := &Monitor{
-		DataCh: make(chan MonitorValue),
-		TaskCh: make(chan func(), workerCount),
+		DataCh:        make(chan MonitorValue),
+		CollectTaskCh: make(chan func(), rateLimit),
+		ReportTaskCh:  make(chan func(), collectWorkerCount),
 	}
-	m.startWorkerPool(workerCount)
+	m.startWorkerPool(rateLimit)
 	return m
 }
 
-func (monitor *Monitor) startWorkerPool(workerCount uint) {
-	for i := 0; i < int(workerCount); i++ {
+func (monitor *Monitor) startWorkerPool(rateLimit uint) {
+	for i := 0; i < collectWorkerCount; i++ {
 		monitor.WaitGroup.Add(1)
 		go func() {
 			defer monitor.WaitGroup.Done()
-			for task := range monitor.TaskCh {
-				task()
+			for collectTask := range monitor.CollectTaskCh {
+				collectTask()
+			}
+		}()
+	}
+	for k := 0; k < int(rateLimit); k++ {
+		monitor.WaitGroup.Add(1)
+		go func() {
+			defer monitor.WaitGroup.Done()
+			for reportTask := range monitor.ReportTaskCh {
+				reportTask()
 			}
 		}()
 	}
 }
 
 func (monitor *Monitor) Shutdown() {
-	close(monitor.TaskCh)
+	close(monitor.ReportTaskCh)
+	close(monitor.CollectTaskCh)
 	monitor.WaitGroup.Wait()
 	close(monitor.DataCh)
 }
@@ -69,8 +82,8 @@ type MonitorValue struct {
 func (monitor *Monitor) CollectStat(pollInterval time.Duration) {
 	ticker := time.NewTicker(pollInterval)
 	for range ticker.C {
-		monitor.TaskCh <- monitor.collectStat
-		monitor.TaskCh <- monitor.collectMemStat
+		monitor.CollectTaskCh <- monitor.collectStat
+		monitor.CollectTaskCh <- monitor.collectMemStat
 	}
 }
 
@@ -132,8 +145,10 @@ func (monitor *Monitor) ReportStat(agentConfig *config.AgentConfig, reportInterv
 	reportSender sender.ReportSender) {
 	ticker := time.NewTicker(reportInterval)
 	for range ticker.C {
-		monitor.TaskCh <- func() {
-			monitor.reportStat(agentConfig, reportSender)
+		for i := 0; i < int(agentConfig.RateLimit); i++ {
+			monitor.ReportTaskCh <- func() {
+				monitor.reportStat(agentConfig, reportSender)
+			}
 		}
 	}
 }
