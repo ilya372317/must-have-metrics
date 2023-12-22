@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		logger.Log.Panicf("failed get config: %v", err)
 	}
-	monitor := statistic.New()
+	monitor := statistic.New(cnfg.RateLimit)
 	defer monitor.Shutdown()
 	go monitor.CollectStat(time.Duration(cnfg.PollInterval) * time.Second)
 	go monitor.ReportStat(
