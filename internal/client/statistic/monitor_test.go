@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMonitor_collectStat(t *testing.T) {
@@ -30,15 +31,20 @@ func TestMonitor_collectStat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			monitor := New(10)
-			go monitor.collectStat()
-		loop:
-			for {
-				select {
-				case value := <-monitor.DataCh:
-					assert.Contains(t, tt.want.keys, value.Name)
-				default:
-					break loop
-				}
+			monitor.collectStat()
+
+			for _, statName := range tt.want.keys {
+				_, ok := monitor.Data[statName]
+				assert.True(t, ok)
+			}
+
+			pollCount, pollCountExist := monitor.Data["PollCount"]
+			require.True(t, pollCountExist)
+			assert.Equal(t, 1, *pollCount.Delta)
+			randomValue, randomValueExist := monitor.Data["RandomValue"]
+			require.True(t, randomValueExist)
+			if *randomValue.Value <= 0 {
+				t.Errorf("invalid random value")
 			}
 		})
 	}
