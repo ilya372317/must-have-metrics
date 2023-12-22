@@ -24,6 +24,7 @@ const randomValueName = "RandomValue"
 const minRandomValue = 1
 const maxRandomValue = 50
 const collectWorkerCount = 4
+const dataChBufferSize = 100
 
 var counterValue = 0
 
@@ -36,9 +37,9 @@ type Monitor struct {
 
 func New(rateLimit uint) *Monitor {
 	m := &Monitor{
-		DataCh:        make(chan MonitorValue),
-		CollectTaskCh: make(chan func(), rateLimit),
-		ReportTaskCh:  make(chan func(), collectWorkerCount),
+		DataCh:        make(chan MonitorValue, dataChBufferSize),
+		CollectTaskCh: make(chan func(), collectWorkerCount),
+		ReportTaskCh:  make(chan func(), rateLimit),
 	}
 	m.startWorkerPool(rateLimit)
 	return m
@@ -145,16 +146,14 @@ func (monitor *Monitor) ReportStat(agentConfig *config.AgentConfig, reportInterv
 	reportSender sender.ReportSender) {
 	ticker := time.NewTicker(reportInterval)
 	for range ticker.C {
-		for i := 0; i < int(agentConfig.RateLimit); i++ {
-			monitor.ReportTaskCh <- func() {
-				monitor.reportStat(agentConfig, reportSender)
-			}
+		monitor.ReportTaskCh <- func() {
+			monitor.reportStat(agentConfig, reportSender)
 		}
 	}
 }
 
 func (monitor *Monitor) reportStat(agentConfig *config.AgentConfig, reportSender sender.ReportSender) {
-	data := make([]MonitorValue, 0, len(monitor.DataCh))
+	data := make([]MonitorValue, 0, 20)
 loop:
 	for {
 		select {
@@ -163,10 +162,6 @@ loop:
 		default:
 			break loop
 		}
-	}
-
-	if len(data) == 0 {
-		return
 	}
 	requestURL := createURLForReportStat(agentConfig.Host)
 	body := createBody(data)
