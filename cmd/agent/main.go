@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
@@ -26,11 +25,11 @@ func main() {
 	}
 	monitor := statistic.New(cnfg.RateLimit)
 	defer monitor.Shutdown()
-	reportSender := sender.NewSender(sender.NewSenderClient(cnfg, http.DefaultClient), cnfg)
 	go monitor.CollectStat(time.Duration(cnfg.PollInterval) * time.Second)
 	go monitor.ReportStat(
+		cnfg,
 		time.Duration(cnfg.ReportInterval)*time.Second,
-		reportSender,
+		sender.SendReport,
 	)
 	select {}
 }

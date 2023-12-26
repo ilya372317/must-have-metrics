@@ -2,10 +2,13 @@ package statistic
 
 import (
 	"encoding/json"
+	"fmt"
 	"runtime"
 	"sync"
 	"time"
 
+	"github.com/ilya372317/must-have-metrics/internal/client/sender"
+	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
@@ -120,12 +123,8 @@ func (monitor *Monitor) collectStat() {
 	monitor.Mutex.Unlock()
 }
 
-type ReportSender interface {
-	Send(string)
-}
-
-func (monitor *Monitor) ReportStat(reportInterval time.Duration,
-	reportSender ReportSender) {
+func (monitor *Monitor) ReportStat(agentConfig *config.AgentConfig, reportInterval time.Duration,
+	reportSender sender.ReportSender) {
 	ticker := time.NewTicker(reportInterval)
 	for range ticker.C {
 		dataForSend := make([]MonitorValue, 0, len(monitor.Data))
@@ -140,17 +139,18 @@ func (monitor *Monitor) ReportStat(reportInterval time.Duration,
 
 		for _, chunk := range dataChunks {
 			monitor.ReportTaskCh <- func() {
-				monitor.reportStat(reportSender, chunk)
+				monitor.reportStat(agentConfig, reportSender, chunk)
 			}
 		}
 	}
 }
-func (monitor *Monitor) reportStat(
-	reportSender ReportSender,
+func (monitor *Monitor) reportStat(agentConfig *config.AgentConfig,
+	reportSender sender.ReportSender,
 	data []MonitorValue,
 ) {
+	requestURL := createURLForReportStat(agentConfig.Host)
 	body := createBody(data)
-	reportSender.Send(body)
+	reportSender(agentConfig, requestURL, body)
 	monitor.resetPollCount()
 }
 
@@ -206,6 +206,10 @@ func createBody(data []MonitorValue) string {
 
 	body, _ := json.Marshal(&metricsList)
 	return string(body)
+}
+
+func createURLForReportStat(host string) string {
+	return fmt.Sprintf("http://" + host + "/updates")
 }
 
 func chunkMonitorValueSlice(slice []MonitorValue, chunkSize int) [][]MonitorValue {
