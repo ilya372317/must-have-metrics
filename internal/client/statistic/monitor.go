@@ -38,13 +38,32 @@ func New(poolSize uint) *Monitor {
 	return m
 }
 
+func (monitor *Monitor) startWorker(workerID int) {
+	go func() {
+		for {
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Log.Errorf("Worker %d recovered from panic: %v", workerID, r)
+					// Перезапуск горутины после обработки паники
+					time.Sleep(time.Second)       // Пауза перед перезапуском
+					monitor.startWorker(workerID) // Рекурсивный перезапуск
+				}
+			}()
+
+			// Логика работы горутины
+			reportTask, more := <-monitor.ReportTaskCh
+			if !more {
+				logger.Log.Infof("Worker %d is stopping because the channel is closed.", workerID)
+				return
+			}
+			reportTask()
+		}
+	}()
+}
+
 func (monitor *Monitor) startWorkerPool(poolSize uint) {
 	for k := 0; k < int(poolSize); k++ {
-		go func() {
-			for reportTask := range monitor.ReportTaskCh {
-				reportTask()
-			}
-		}()
+		monitor.startWorker(k)
 	}
 }
 
