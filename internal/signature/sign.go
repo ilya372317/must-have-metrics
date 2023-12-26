@@ -1,4 +1,4 @@
-package handlers
+package signature
 
 import (
 	"bytes"
@@ -13,13 +13,13 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
 
-func createSign(body []byte, secretKey string) []byte {
+func CreateSign(body []byte, secretKey string) []byte {
 	h := hmac.New(sha256.New, []byte(secretKey))
 	h.Write(body)
 	return h.Sum(nil)
 }
 
-func isCorrectSigned(serverConfig *config.ServerConfig, request *http.Request) (bool, error) {
+func IsCorrectSigned(serverConfig *config.ServerConfig, request *http.Request) (bool, error) {
 	if !serverConfig.ShouldSignData() {
 		return true, nil
 	}
@@ -29,7 +29,7 @@ func isCorrectSigned(serverConfig *config.ServerConfig, request *http.Request) (
 	if err != nil {
 		return false, fmt.Errorf("failed read request body for check sign: %w", err)
 	}
-	sign := createSign(body, serverConfig.SecretKey)
+	sign := CreateSign(body, serverConfig.SecretKey)
 	encodeSign := base64.StdEncoding.EncodeToString(sign)
 	if agentSign != encodeSign {
 		return false, nil
@@ -43,11 +43,11 @@ func isCorrectSigned(serverConfig *config.ServerConfig, request *http.Request) (
 	return true, nil
 }
 
-func setSign(writer http.ResponseWriter, serverConfig *config.ServerConfig, data []byte) {
+func SetSign(writer http.ResponseWriter, serverConfig *config.ServerConfig, data []byte) {
 	if !serverConfig.ShouldSignData() {
 		return
 	}
-	sign := createSign(data, serverConfig.SecretKey)
+	sign := CreateSign(data, serverConfig.SecretKey)
 	encodeSign := base64.StdEncoding.EncodeToString(sign)
 	writer.Header().Set("HashSHA256", encodeSign)
 }

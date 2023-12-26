@@ -1,4 +1,4 @@
-package handlers
+package signature
 
 import (
 	"bytes"
@@ -41,7 +41,7 @@ func Test_createSign(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := createSign([]byte(tt.arg.src), tt.arg.key)
+			got := CreateSign([]byte(tt.arg.src), tt.arg.key)
 
 			h := hmac.New(sha256.New, []byte(tt.arg.key))
 			h.Write([]byte(tt.arg.src))
@@ -92,13 +92,13 @@ func Test_isCorrectSigned(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/updates", bytes.NewReader(tt.args.body))
-			sign := createSign(tt.args.bodyForSign, tt.args.secretKey)
+			sign := CreateSign(tt.args.bodyForSign, tt.args.secretKey)
 			req.Header.Set("HashSHA256", base64.StdEncoding.EncodeToString(sign))
 
 			cnfg := &config.ServerConfig{
 				SecretKey: tt.args.secretKey,
 			}
-			got, err := isCorrectSigned(cnfg, req)
+			got, err := IsCorrectSigned(cnfg, req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
