@@ -29,17 +29,17 @@ type Monitor struct {
 	sync.Mutex
 }
 
-func New(rateLimit uint) *Monitor {
+func New(poolSize uint) *Monitor {
 	m := &Monitor{
 		Data:         make(map[string]MonitorValue),
-		ReportTaskCh: make(chan func(), rateLimit),
+		ReportTaskCh: make(chan func(), poolSize),
 	}
-	m.startWorkerPool(rateLimit)
+	m.startWorkerPool(poolSize)
 	return m
 }
 
-func (monitor *Monitor) startWorkerPool(rateLimit uint) {
-	for k := 0; k < int(rateLimit); k++ {
+func (monitor *Monitor) startWorkerPool(poolSize uint) {
+	for k := 0; k < int(poolSize); k++ {
 		go func() {
 			for reportTask := range monitor.ReportTaskCh {
 				reportTask()
