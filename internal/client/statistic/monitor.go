@@ -40,15 +40,14 @@ func New(poolSize uint) *Monitor {
 
 func (monitor *Monitor) startWorker(workerID int) {
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Log.Errorf("Worker %d recovered from panic: %v", workerID, r)
+				time.Sleep(time.Second)
+				monitor.startWorker(workerID)
+			}
+		}()
 		for {
-			defer func() {
-				if r := recover(); r != nil {
-					logger.Log.Errorf("Worker %d recovered from panic: %v", workerID, r)
-					time.Sleep(time.Second)
-					monitor.startWorker(workerID)
-				}
-			}()
-
 			reportTask, more := <-monitor.ReportTaskCh
 			if !more {
 				logger.Log.Infof("Worker %d is stopping because the channel is closed.", workerID)
