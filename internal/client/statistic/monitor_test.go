@@ -1,7 +1,6 @@
 package statistic
 
 import (
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,10 +30,8 @@ func TestMonitor_collectStat(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			monitor := New()
-			rtm := runtime.MemStats{}
-			runtime.ReadMemStats(&rtm)
-			monitor.collectStat(&rtm)
+			monitor := New(10)
+			monitor.collectStat()
 
 			for _, statName := range tt.want.keys {
 				_, ok := monitor.Data[statName]

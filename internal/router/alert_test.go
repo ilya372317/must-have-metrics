@@ -1,19 +1,20 @@
 package router
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
+	"github.com/ilya372317/must-have-metrics/internal/utils/compress"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -353,8 +354,11 @@ func testRequest(
 	body string,
 ) (*http.Response, string) {
 	t.Helper()
-	req, err := http.NewRequest(method, ts.URL+path, strings.NewReader(body))
+	compressedBody, err := compress.Do([]byte(body))
+	require.NoError(t, err)
+	req, err := http.NewRequest(method, ts.URL+path, bytes.NewReader(compressedBody))
 	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set("Content-Encoding", "gzip")
 	require.NoError(t, err)
 
 	resp, err := ts.Client().Do(req)

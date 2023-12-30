@@ -293,8 +293,9 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 		return nil, fmt.Errorf(failedExecuteQueryErrPattern, err)
 	}
 	defer func() {
-		err = rows.Close()
-		logger.Log.Warnf("failed close rows: %v", err)
+		if err = rows.Close(); err != nil {
+			logger.Log.Warnf("failed close rows: %v", err)
+		}
 	}()
 
 	var alerts []entity.Alert

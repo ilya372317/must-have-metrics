@@ -8,26 +8,68 @@ import (
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
+	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
+	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/utils"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 const counterName = "PollCount"
 const randomValueName = "RandomValue"
 const minRandomValue = 1
 const maxRandomValue = 50
+const chunkForRequestSize = 50
 
 type Monitor struct {
-	Data map[string]MonitorValue
+	Data         map[string]MonitorValue
+	ReportTaskCh chan func()
 	sync.Mutex
 }
 
-func New() Monitor {
-	return Monitor{Data: make(map[string]MonitorValue)}
+func New(poolSize uint) *Monitor {
+	m := &Monitor{
+		Data:         make(map[string]MonitorValue),
+		ReportTaskCh: make(chan func(), poolSize),
+	}
+	m.startWorkerPool(poolSize)
+	return m
+}
+
+func (monitor *Monitor) startWorker(workerID int) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Log.Errorf("Worker %d recovered from panic: %v", workerID, r)
+				time.Sleep(time.Second)
+				monitor.startWorker(workerID)
+			}
+		}()
+		for {
+			reportTask, more := <-monitor.ReportTaskCh
+			if !more {
+				logger.Log.Infof("Worker %d is stopping because the channel is closed.", workerID)
+				return
+			}
+			reportTask()
+		}
+	}()
+}
+
+func (monitor *Monitor) startWorkerPool(poolSize uint) {
+	for k := 0; k < int(poolSize); k++ {
+		monitor.startWorker(k)
+	}
+}
+
+func (monitor *Monitor) Shutdown() {
+	close(monitor.ReportTaskCh)
 }
 
 type MonitorValue struct {
+	Name  string
 	Value *uint64
 	Delta *int
 	Type  string
@@ -35,16 +77,37 @@ type MonitorValue struct {
 
 func (monitor *Monitor) CollectStat(pollInterval time.Duration) {
 	ticker := time.NewTicker(pollInterval)
-	rtm := runtime.MemStats{}
 	for range ticker.C {
-		runtime.ReadMemStats(&rtm)
-		monitor.Lock()
-		monitor.collectStat(&rtm)
-		monitor.Unlock()
+		go monitor.collectStat()
+		go monitor.collectMemStat()
 	}
 }
 
-func (monitor *Monitor) collectStat(rtm *runtime.MemStats) {
+func (monitor *Monitor) collectMemStat() {
+	monitor.Mutex.Lock()
+	m, err := mem.VirtualMemory()
+	if err != nil {
+		logger.Log.Warnf("failed read virtual memory stats: %v", err)
+		return
+	}
+
+	monitor.setGaugeValue("TotalMemory", m.Total)
+	monitor.setGaugeValue("FreeMemory", m.Free)
+
+	cpuPercentages, err := cpu.Percent(0, true)
+	if err != nil {
+		logger.Log.Warnf("failed read cpu stats: %v", err)
+		return
+	}
+	monitor.setGaugeValue("CPUutilization1", uint64(cpuPercentages[0]))
+	monitor.Mutex.Unlock()
+}
+
+func (monitor *Monitor) collectStat() {
+	monitor.Mutex.Lock()
+	rtm := runtime.MemStats{}
+	runtime.ReadMemStats(&rtm)
+	monitor.updatePollCount()
 	monitor.setGaugeValue("Alloc", rtm.Alloc)
 	monitor.setGaugeValue("BuckHashSys", rtm.BuckHashSys)
 	monitor.setGaugeValue("GCSys", rtm.GCSys)
@@ -73,29 +136,45 @@ func (monitor *Monitor) collectStat(rtm *runtime.MemStats) {
 	monitor.setGaugeValue("NumForcedGC", uint64(rtm.NumForcedGC))
 	monitor.setGaugeValue("GCCPUFraction", uint64(rtm.GCCPUFraction))
 	monitor.setGaugeValue(randomValueName, uint64(utils.GetRandomValue(minRandomValue, maxRandomValue)))
-	monitor.updatePollCount()
+	monitor.Mutex.Unlock()
 }
 
-func (monitor *Monitor) ReportStat(host string, reportInterval time.Duration, reportSender sender.ReportSender) {
+func (monitor *Monitor) ReportStat(agentConfig *config.AgentConfig, reportInterval time.Duration,
+	reportSender sender.ReportSender) {
 	ticker := time.NewTicker(reportInterval)
 	for range ticker.C {
-		monitor.Lock()
-		monitor.reportStat(host, reportSender)
-		monitor.Unlock()
+		dataForSend := make([]MonitorValue, 0, len(monitor.Data))
+
+		monitor.Mutex.Lock()
+		for _, value := range monitor.Data {
+			dataForSend = append(dataForSend, value)
+		}
+		monitor.Mutex.Unlock()
+
+		dataChunks := chunkMonitorValueSlice(dataForSend, chunkForRequestSize)
+
+		for _, chunk := range dataChunks {
+			monitor.ReportTaskCh <- func() {
+				monitor.reportStat(agentConfig, reportSender, chunk)
+			}
+		}
 	}
 }
-
-func (monitor *Monitor) reportStat(host string, reportSender sender.ReportSender) {
-	requestURL := createURLForReportStat(host)
-	body := createBody(monitor.Data)
-	reportSender(requestURL, body)
+func (monitor *Monitor) reportStat(agentConfig *config.AgentConfig,
+	reportSender sender.ReportSender,
+	data []MonitorValue,
+) {
+	requestURL := createURLForReportStat(agentConfig.Host)
+	body := createBody(data)
+	reportSender(agentConfig, requestURL, body)
 	monitor.resetPollCount()
 }
 
 func (monitor *Monitor) setGaugeValue(name string, value uint64) {
 	monitor.Data[name] = MonitorValue{
-		Type:  entity.TypeGauge,
+		Name:  name,
 		Value: &value,
+		Type:  entity.TypeGauge,
 	}
 }
 
@@ -103,12 +182,13 @@ func (monitor *Monitor) updatePollCount() {
 	_, ok := monitor.Data[counterName]
 	if !ok {
 		firstValue := 1
-		monitor.Data[counterName] = MonitorValue{Type: entity.TypeCounter, Delta: &firstValue}
+		monitor.Data[counterName] = MonitorValue{Name: counterName, Type: entity.TypeCounter, Delta: &firstValue}
 		return
 	}
 	oldValue := monitor.Data[counterName].Delta
 	newValue := *oldValue + 1
 	monitor.Data[counterName] = MonitorValue{
+		Name:  counterName,
 		Type:  entity.TypeCounter,
 		Delta: &newValue,
 	}
@@ -116,16 +196,17 @@ func (monitor *Monitor) updatePollCount() {
 func (monitor *Monitor) resetPollCount() {
 	nullValue := 0
 	monitor.Data[counterName] = MonitorValue{
+		Name:  counterName,
 		Type:  entity.TypeCounter,
 		Delta: &nullValue,
 	}
 }
 
-func createBody(data map[string]MonitorValue) string {
+func createBody(data []MonitorValue) string {
 	metricsList := make([]dto.Metrics, 0, len(data))
-	for name, monitorValue := range data {
+	for _, monitorValue := range data {
 		m := dto.Metrics{
-			ID:    name,
+			ID:    monitorValue.Name,
 			MType: monitorValue.Type,
 		}
 		if monitorValue.Type == entity.TypeCounter {
@@ -145,4 +226,21 @@ func createBody(data map[string]MonitorValue) string {
 
 func createURLForReportStat(host string) string {
 	return fmt.Sprintf("http://" + host + "/updates")
+}
+
+func chunkMonitorValueSlice(slice []MonitorValue, chunkSize int) [][]MonitorValue {
+	var chunks [][]MonitorValue
+	for {
+		if len(slice) == 0 {
+			break
+		}
+
+		if len(slice) < chunkSize {
+			chunkSize = len(slice)
+		}
+
+		chunks = append(chunks, slice[:chunkSize])
+		slice = slice[chunkSize:]
+	}
+	return chunks
 }

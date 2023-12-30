@@ -28,4 +28,5 @@ vendor/
 /golangci-lint
 /storage
 .env-server
+.env-agent
 machinet.conf
