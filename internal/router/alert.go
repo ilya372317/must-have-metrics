@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"net/http"
+	"net/http/pprof"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/config"
@@ -46,5 +47,10 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 	router.Route("/value/{type}/{name}", func(r chi.Router) {
 		r.Get("/", handlers.ShowHandler(repository))
 	})
+	router.HandleFunc("/debug/pprof/", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	return router
 }
