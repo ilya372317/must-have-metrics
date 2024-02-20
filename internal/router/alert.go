@@ -52,5 +52,6 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	router.HandleFunc("/debug/pprof/heap", pprof.Handler("heap").ServeHTTP)
 	return router
 }
