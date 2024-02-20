@@ -5,11 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ilya372317/must-have-metrics/internal/handlers"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
-
-var _ handlers.IndexStorage = (*InMemoryStorage)(nil)
 
 type AlertNotFoundError struct{}
 

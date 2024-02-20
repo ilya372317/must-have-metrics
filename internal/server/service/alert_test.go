@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"sort"
+	"strconv"
 	"testing"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
@@ -394,6 +395,25 @@ func Test_FillAndSaveFromFile(t *testing.T) {
 			_ = os.Remove(tt.filepath)
 			memoryStorage.Reset()
 		})
+	}
+}
+
+func BenchmarkBulkAddAlerts(b *testing.B) {
+	b.ReportAllocs()
+	b.StopTimer()
+	mList := make([]dto.Metrics, 0, 1000)
+	for i := 0; i < 1000; i++ {
+		mList = append(mList, dto.Metrics{
+			ID:    strconv.Itoa(i),
+			MType: "gauge",
+			Value: floatPointer(float64(i) + 3.2),
+			Delta: nil,
+		})
+	}
+	ctx := context.Background()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = BulkAddAlerts(ctx, storage.NewInMemoryStorage(), mList)
 	}
 }
 
