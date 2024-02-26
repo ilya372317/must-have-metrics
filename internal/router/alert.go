@@ -12,6 +12,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
 )
 
+// AlertStorage interface with all storage methods. Different handler will use different methods from here.
 type AlertStorage interface {
 	Save(ctx context.Context, name string, alert entity.Alert) error
 	Update(ctx context.Context, name string, alert entity.Alert) error
@@ -25,6 +26,7 @@ type AlertStorage interface {
 	Ping() error
 }
 
+// AlertRouter return configured router.
 func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.WithLogging(), middleware.Compressed())

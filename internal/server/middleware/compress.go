@@ -62,16 +62,16 @@ func (w *writer) Close() error {
 	return err
 }
 
-type Reader struct {
+type reader struct {
 	r          io.ReadCloser
 	gzipReader *gzip.Reader
 }
 
-func (r *Reader) Read(p []byte) (n int, err error) {
+func (r *reader) Read(p []byte) (n int, err error) {
 	return r.gzipReader.Read(p) //nolint //error may be good case
 }
 
-func (r *Reader) Close() error {
+func (r *reader) Close() error {
 	err := r.r.Close()
 	if err != nil {
 		return fmt.Errorf("failed close response reader: %w", err)
@@ -85,18 +85,19 @@ func (r *Reader) Close() error {
 	return err
 }
 
-func newReader(reader io.ReadCloser) (*Reader, error) {
-	gReader, err := gzip.NewReader(reader)
+func newReader(r io.ReadCloser) (*reader, error) {
+	gReader, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed create new gzip reader: %w", err)
 	}
 
-	return &Reader{
-		r:          reader,
+	return &reader{
+		r:          r,
 		gzipReader: gReader,
 	}, nil
 }
 
+// Compressed middleware for compress response and decompress request body.
 func Compressed() Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

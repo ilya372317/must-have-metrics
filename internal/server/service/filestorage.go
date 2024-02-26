@@ -15,14 +15,15 @@ import (
 
 const filePermission = 0600
 
-type FilesystemSupportStorage interface {
+type filesystemSupportStorage interface {
 	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
 	Fill(context.Context, map[string]entity.Alert) error
 }
 
+// SaveDataToFilesystemByInterval by configured interval saving data from storage to filesystem.
 func SaveDataToFilesystemByInterval(
 	ctx context.Context,
-	serverConfig *config.ServerConfig, repository FilesystemSupportStorage) {
+	serverConfig *config.ServerConfig, repository filesystemSupportStorage) {
 	ticker := time.NewTicker(time.Duration(serverConfig.StoreInterval) * time.Second)
 	defer ticker.Stop()
 
@@ -41,7 +42,8 @@ func SaveDataToFilesystemByInterval(
 	}
 }
 
-func FillFromFilesystem(ctx context.Context, storage FilesystemSupportStorage, filePath string) error {
+// FillFromFilesystem truncate storage and save data from filesystem to storage.
+func FillFromFilesystem(ctx context.Context, storage filesystemSupportStorage, filePath string) error {
 	select {
 	case <-ctx.Done():
 		return nil
@@ -70,7 +72,8 @@ func FillFromFilesystem(ctx context.Context, storage FilesystemSupportStorage, f
 	}
 }
 
-func StoreToFilesystem(ctx context.Context, storage FilesystemSupportStorage, filepath string) error {
+// StoreToFilesystem get all records from storage and save them to filesystem.
+func StoreToFilesystem(ctx context.Context, storage filesystemSupportStorage, filepath string) error {
 	allItemsWithKeys, err := storage.AllWithKeys(ctx)
 	if err != nil {
 		return fmt.Errorf("failed get all items: %w", err)

@@ -48,6 +48,7 @@ func isCorrectSigned(serverConfig *config.ServerConfig, request *http.Request) (
 	return true, nil
 }
 
+// WithSign add sign to endpoint based on it response.
 func WithSign(serverConfig *config.ServerConfig) Middleware {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
