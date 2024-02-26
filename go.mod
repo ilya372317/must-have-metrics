@@ -1,6 +1,6 @@
 module github.com/ilya372317/must-have-metrics
 
-go 1.22
+go 1.21
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
