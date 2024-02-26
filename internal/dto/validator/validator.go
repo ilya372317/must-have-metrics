@@ -9,6 +9,7 @@ import (
 
 var mu = sync.Mutex{}
 
+// Validate make validation on given dataTransferObject.
 func Validate(dataTransferObject interface{}, allFieldReq bool) (bool, error) {
 	mu.Lock()
 	govalidator.SetFieldsRequiredByDefault(allFieldReq)
@@ -20,6 +21,7 @@ func Validate(dataTransferObject interface{}, allFieldReq bool) (bool, error) {
 	return result, err
 }
 
+// ValidateRequired validate given dataTransferObject in all fields required mode.
 func ValidateRequired(dataTransferObject interface{}) (bool, error) {
 	return Validate(dataTransferObject, true)
 }

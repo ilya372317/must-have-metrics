@@ -14,6 +14,7 @@ import (
 
 type MetricsList []Metrics
 
+// NewMetricsListDTOFromRequest create MetricsList from given request
 func NewMetricsListDTOFromRequest(r *http.Request) (MetricsList, error) {
 	metricsList := make([]Metrics, 0)
 	if err := json.NewDecoder(r.Body).Decode(&metricsList); err != nil {
@@ -23,6 +24,7 @@ func NewMetricsListDTOFromRequest(r *http.Request) (MetricsList, error) {
 	return metricsList, nil
 }
 
+// Metrics DTO for representing received metrics from agent.
 type Metrics struct {
 	ID    string   `json:"id" valid:"type(string)"`          // Имя метрики
 	MType string   `json:"type" valid:"in(gauge|counter)"`   // параметр, принимающий значение gauge или counter
@@ -30,6 +32,7 @@ type Metrics struct {
 	Delta *int64   `json:"delta,omitempty" valid:"optional"` // Значение метрики в случае передачи counter
 }
 
+// NewMetricsDTOFromRequest create Metrics DTO from given request.
 func NewMetricsDTOFromRequest(r *http.Request) (Metrics, error) {
 	metrics := Metrics{}
 	defer func() {
@@ -42,6 +45,8 @@ func NewMetricsDTOFromRequest(r *http.Request) (Metrics, error) {
 	return metrics, nil
 }
 
+// NewMetricsDTOFromRequestParams create Metrics from given request.
+// For build using query parameters instead of request body.
 func NewMetricsDTOFromRequestParams(r *http.Request) (*Metrics, error) {
 	metrics := &Metrics{
 		ID:    chi.URLParam(r, "name"),
@@ -70,6 +75,7 @@ func NewMetricsDTOFromRequestParams(r *http.Request) (*Metrics, error) {
 	return metrics, nil
 }
 
+// NewMetricsDTOFromAlert create Metrics from given entity.Alert.
 func NewMetricsDTOFromAlert(alert entity.Alert) Metrics {
 	return Metrics{
 		ID:    alert.Name,
@@ -79,6 +85,7 @@ func NewMetricsDTOFromAlert(alert entity.Alert) Metrics {
 	}
 }
 
+// ConvertToAlert converting Metrics to entity.Alert.
 func (dto *Metrics) ConvertToAlert() *entity.Alert {
 	alert := &entity.Alert{
 		Type: dto.MType,
@@ -95,6 +102,7 @@ func (dto *Metrics) ConvertToAlert() *entity.Alert {
 	return alert
 }
 
+// Validate perform validation on Metrics
 func (dto *Metrics) Validate() (bool, error) {
 	switch dto.MType {
 	case entity.TypeGauge:

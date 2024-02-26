@@ -7,6 +7,7 @@ import (
 	"github.com/caarlos0/env"
 )
 
+// ServerConfig server configs.
 type ServerConfig struct {
 	Host          string `env:"ADDRESS"`
 	FilePath      string `env:"FILE_STORAGE_PATH"`
@@ -16,6 +17,7 @@ type ServerConfig struct {
 	SecretKey     string `env:"KEY"`
 }
 
+// NewServer constructor for ServerConfig.
 func NewServer() (*ServerConfig, error) {
 	cnfg := &ServerConfig{}
 	cnfg.parseFlags()
@@ -44,10 +46,12 @@ func (c *ServerConfig) parseFlags() {
 	flag.Parse()
 }
 
+// ShouldConnectToDatabase check for application configured to database connection.
 func (c *ServerConfig) ShouldConnectToDatabase() bool {
 	return c.DatabaseDSN != ""
 }
 
+// ShouldSignData check for server should sign response data.
 func (c *ServerConfig) ShouldSignData() bool {
 	return c.SecretKey != ""
 }

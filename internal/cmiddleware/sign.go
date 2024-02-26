@@ -8,6 +8,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/signature"
 )
 
+// WithSignature middleware for attaching request signature to headers.
 func WithSignature(secretKey string) resty.RequestMiddleware {
 	return func(client *resty.Client, request *resty.Request) error {
 		body, ok := request.Body.(string)

@@ -20,25 +20,25 @@ const (
 	failedCompressDataErrPattern = "failed compress data: %w"
 )
 
-type Writer struct {
+type writer struct {
 	w          http.ResponseWriter
 	gzipWriter *gzip.Writer
 }
 
-func newWriter(writer http.ResponseWriter) *Writer {
-	gzipWriter := gzip.NewWriter(writer)
+func newWriter(w http.ResponseWriter) *writer {
+	gzipWriter := gzip.NewWriter(w)
 
-	return &Writer{
-		w:          writer,
+	return &writer{
+		w:          w,
 		gzipWriter: gzipWriter,
 	}
 }
 
-func (w *Writer) Header() http.Header {
+func (w *writer) Header() http.Header {
 	return w.w.Header()
 }
 
-func (w *Writer) Write(bytes []byte) (int, error) {
+func (w *writer) Write(bytes []byte) (int, error) {
 	size, err := w.gzipWriter.Write(bytes)
 	if err != nil {
 		err = fmt.Errorf(failedCompressDataErrPattern, err)
@@ -46,7 +46,7 @@ func (w *Writer) Write(bytes []byte) (int, error) {
 	return size, err
 }
 
-func (w *Writer) WriteHeader(statusCode int) {
+func (w *writer) WriteHeader(statusCode int) {
 	if statusCode < LastPositiveStatusCode {
 		w.w.Header().Set("Content-Encoding", "gzip")
 	}
@@ -54,7 +54,7 @@ func (w *Writer) WriteHeader(statusCode int) {
 	w.w.WriteHeader(statusCode)
 }
 
-func (w *Writer) Close() error {
+func (w *writer) Close() error {
 	err := w.gzipWriter.Close()
 	if err != nil {
 		err = fmt.Errorf("failed close gzip response writer: %w", err)

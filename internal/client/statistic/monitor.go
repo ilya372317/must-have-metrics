@@ -23,12 +23,14 @@ const minRandomValue = 1
 const maxRandomValue = 50
 const chunkForRequestSize = 50
 
+// Monitor entity for collect metrics and send it to server.
 type Monitor struct {
 	Data         map[string]MonitorValue
 	ReportTaskCh chan func()
 	sync.Mutex
 }
 
+// New constructor for Monitor.
 func New(poolSize uint) *Monitor {
 	m := &Monitor{
 		Data:         make(map[string]MonitorValue),
@@ -64,10 +66,12 @@ func (monitor *Monitor) startWorkerPool(poolSize uint) {
 	}
 }
 
+// Shutdown stop all process in monitor.
 func (monitor *Monitor) Shutdown() {
 	close(monitor.ReportTaskCh)
 }
 
+// MonitorValue representation of collected metric.
 type MonitorValue struct {
 	Name  string
 	Value *uint64
@@ -75,6 +79,7 @@ type MonitorValue struct {
 	Type  string
 }
 
+// CollectStat method for collect metrics from operating system.
 func (monitor *Monitor) CollectStat(pollInterval time.Duration) {
 	ticker := time.NewTicker(pollInterval)
 	for range ticker.C {

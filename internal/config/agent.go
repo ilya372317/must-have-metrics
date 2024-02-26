@@ -7,6 +7,7 @@ import (
 	"github.com/caarlos0/env"
 )
 
+// AgentConfig agent configs.
 type AgentConfig struct {
 	Host           string `env:"ADDRESS"`
 	PollInterval   uint   `env:"POLL_INTERVAL"`
@@ -15,6 +16,7 @@ type AgentConfig struct {
 	RateLimit      uint   `env:"RATE_LIMIT"`
 }
 
+// NewAgent constructor for AgentConfig.
 func NewAgent() (*AgentConfig, error) {
 	agentConfig := &AgentConfig{}
 	agentConfig.parseFlags()
@@ -37,6 +39,7 @@ func (c *AgentConfig) parseFlags() {
 	flag.Parse()
 }
 
+// ShouldSignData check if agent configured for sign sending data.
 func (c *AgentConfig) ShouldSignData() bool {
 	return c.SecretKey != ""
 }

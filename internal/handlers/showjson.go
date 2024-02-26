@@ -15,11 +15,12 @@ const (
 	jsonContentHeaderValue = "application/json"
 )
 
-type ShowJSONStorage interface {
+type showJSONStorage interface {
 	Get(ctx context.Context, name string) (entity.Alert, error)
 }
 
-func ShowJSONHandler(storage ShowJSONStorage) http.HandlerFunc {
+// ShowJSONHandler allow to view information about specific metric in json format.
+func ShowJSONHandler(storage showJSONStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set(contentTypeHeader, jsonContentHeaderValue)
 		metrics, err := dto.NewMetricsDTOFromRequest(request)

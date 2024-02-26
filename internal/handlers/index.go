@@ -11,11 +11,12 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/utils"
 )
 
-type IndexStorage interface {
+type indexStorage interface {
 	All(ctx context.Context) ([]entity.Alert, error)
 }
 
-func IndexHandler(strg IndexStorage) http.HandlerFunc {
+// IndexHandler give list of stored metrics in html format.
+func IndexHandler(strg indexStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "text/html")
 		allAlerts, err := strg.All(request.Context())

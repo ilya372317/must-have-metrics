@@ -7,6 +7,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/utils/compress"
 )
 
+// WithCompress middleware for compressing requests sent to the server.
 func WithCompress() resty.RequestMiddleware {
 	return func(client *resty.Client, request *resty.Request) error {
 		body, ok := request.Body.(string)

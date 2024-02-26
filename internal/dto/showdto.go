@@ -13,11 +13,13 @@ const (
 	nameURLParameter = "name"
 )
 
+// ShowAlertDTO DTO for represent request body and response body for show alert.
 type ShowAlertDTO struct {
 	Type string `valid:"in(gauge|counter)"`
 	Name string `valid:"type(string)"`
 }
 
+// CreateShowAlertDTOFromRequest create ShowAlertDTO from given request.
 func CreateShowAlertDTOFromRequest(request *http.Request) ShowAlertDTO {
 	typ := chi.URLParam(request, typeURLParameter)
 	name := chi.URLParam(request, nameURLParameter)
@@ -28,6 +30,7 @@ func CreateShowAlertDTOFromRequest(request *http.Request) ShowAlertDTO {
 	}
 }
 
+// CreateShowAlertDTOFromMetrics create ShowAlertDTO from given Metrics DTO.
 func CreateShowAlertDTOFromMetrics(metrics Metrics) ShowAlertDTO {
 	return ShowAlertDTO{
 		Type: metrics.MType,
@@ -35,6 +38,7 @@ func CreateShowAlertDTOFromMetrics(metrics Metrics) ShowAlertDTO {
 	}
 }
 
+// Validate perform validation on ShowAlertDTO.
 func (dto *ShowAlertDTO) Validate() (bool, error) {
 	isValid, err := validator.ValidateRequired(*dto)
 	if err != nil {
