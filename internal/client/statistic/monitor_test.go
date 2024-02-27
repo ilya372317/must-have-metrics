@@ -49,3 +49,17 @@ func TestMonitor_collectStat(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkMonitor_collectStat1(b *testing.B) {
+	b.ReportAllocs()
+	b.StopTimer()
+	m := Monitor{
+		Data:         make(map[string]MonitorValue),
+		ReportTaskCh: make(chan func(), 10),
+	}
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		m.collectStat()
+	}
+}
