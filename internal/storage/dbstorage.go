@@ -242,16 +242,22 @@ func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entit
 		if err != nil {
 			return fmt.Errorf("failed begin transaction on insert or update: %w", err)
 		}
+		defer func() {
+			if p := recover(); p != nil {
+				_ = tx.Rollback()
+				panic(p)
+			} else if err != nil {
+				_ = tx.Rollback()
+			} else {
+				err = tx.Commit()
+			}
+		}()
 
 		preparedQuery, err := tx.PrepareContext(ctx, `INSERT INTO metrics ("id", "type", "float_value", "int_value") 
 	VALUES ($1, $2, $3, $4) 
 	ON CONFLICT (id) 
 	DO UPDATE SET "type" = excluded.type, "float_value" = excluded.float_value, "int_value" = excluded.int_value`)
-
 		if err != nil {
-			if err = tx.Rollback(); err != nil {
-				logger.Log.Warnf(failedRollbackErrPattern, err)
-			}
 			return fmt.Errorf("failed prepare query on update or insert: %w", err)
 		}
 		defer func() {
@@ -259,17 +265,9 @@ func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entit
 		}()
 
 		for _, alert := range alerts {
-			_, err = preparedQuery.ExecContext(ctx, alert.Name, alert.Type, alert.FloatValue, alert.IntValue)
-			if err != nil {
-				if err = tx.Rollback(); err != nil {
-					logger.Log.Warnf(failedRollbackErrPattern, err)
-				}
+			if _, err = preparedQuery.ExecContext(ctx, alert.Name, alert.Type, alert.FloatValue, alert.IntValue); err != nil {
 				return fmt.Errorf("failed insert alert %v: %w", alert, err)
 			}
-		}
-
-		if err = tx.Commit(); err != nil {
-			return fmt.Errorf("failed commit changes on update or insert: %w", err)
 		}
 
 		return nil
@@ -363,6 +361,7 @@ func withRetries(fn func() error) error {
 		if !isRetriableError(err) {
 			return err
 		}
+		logger.Log.Warnf("Attempt %d failed: %v. Retrying in %v...", attempt+1, err, delay)
 		time.Sleep(delay)
 		delay += time.Second * stepForDelayRetry
 	}
