@@ -23,7 +23,7 @@ type InMemoryStorage struct {
 // NewInMemoryStorage constructor for InMemoryStorage.
 func NewInMemoryStorage() *InMemoryStorage {
 	return &InMemoryStorage{
-		Records: make(map[string]entity.Alert),
+		Records: make(map[string]entity.Alert, 1000),
 	}
 }
 

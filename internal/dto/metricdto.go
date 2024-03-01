@@ -86,8 +86,8 @@ func NewMetricsDTOFromAlert(alert entity.Alert) Metrics {
 }
 
 // ConvertToAlert converting Metrics to entity.Alert.
-func (dto *Metrics) ConvertToAlert() *entity.Alert {
-	alert := &entity.Alert{
+func (dto *Metrics) ConvertToAlert() entity.Alert {
+	alert := entity.Alert{
 		Type: dto.MType,
 		Name: dto.ID,
 	}

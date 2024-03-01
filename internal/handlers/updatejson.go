@@ -42,7 +42,7 @@ func UpdateJSONHandler(storage updateJSONStorage, serverConfig *config.ServerCon
 			logger.Log.Warn(err)
 			return
 		}
-		responseMetric := dto.NewMetricsDTOFromAlert(*newAlert)
+		responseMetric := dto.NewMetricsDTOFromAlert(newAlert)
 		response, err := json.Marshal(&responseMetric)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)

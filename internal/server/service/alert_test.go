@@ -417,6 +417,25 @@ func BenchmarkBulkAddAlerts(b *testing.B) {
 	}
 }
 
+func BenchmarkAddAlert(b *testing.B) {
+	b.ReportAllocs()
+	b.StopTimer()
+	ctx := context.Background()
+	metrics := dto.Metrics{
+		ID:    "metric",
+		MType: "gauge",
+		Value: floatPointer(1.1),
+	}
+	cnfg := &config.ServerConfig{
+		FilePath: "/tmp/metrics.json",
+	}
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = AddAlert(ctx, storage.NewInMemoryStorage(), metrics, cnfg)
+	}
+}
+
 func intPointer(value int64) *int64 {
 	return &value
 }
