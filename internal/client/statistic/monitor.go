@@ -74,8 +74,8 @@ func (monitor *Monitor) Shutdown() {
 // MonitorValue representation of collected metric.
 type MonitorValue struct {
 	Name  string
-	Value *uint64
-	Delta *int
+	Value uint64
+	Delta int
 	Type  string
 }
 
@@ -178,7 +178,7 @@ func (monitor *Monitor) reportStat(agentConfig *config.AgentConfig,
 func (monitor *Monitor) setGaugeValue(name string, value uint64) {
 	monitor.Data[name] = MonitorValue{
 		Name:  name,
-		Value: &value,
+		Value: value,
 		Type:  entity.TypeGauge,
 	}
 }
@@ -187,15 +187,15 @@ func (monitor *Monitor) updatePollCount() {
 	_, ok := monitor.Data[counterName]
 	if !ok {
 		firstValue := 1
-		monitor.Data[counterName] = MonitorValue{Name: counterName, Type: entity.TypeCounter, Delta: &firstValue}
+		monitor.Data[counterName] = MonitorValue{Name: counterName, Type: entity.TypeCounter, Delta: firstValue}
 		return
 	}
 	oldValue := monitor.Data[counterName].Delta
-	newValue := *oldValue + 1
+	newValue := oldValue + 1
 	monitor.Data[counterName] = MonitorValue{
 		Name:  counterName,
 		Type:  entity.TypeCounter,
-		Delta: &newValue,
+		Delta: newValue,
 	}
 }
 func (monitor *Monitor) resetPollCount() {
@@ -203,7 +203,7 @@ func (monitor *Monitor) resetPollCount() {
 	monitor.Data[counterName] = MonitorValue{
 		Name:  counterName,
 		Type:  entity.TypeCounter,
-		Delta: &nullValue,
+		Delta: nullValue,
 	}
 }
 
@@ -215,11 +215,11 @@ func createBody(data []MonitorValue) string {
 			MType: monitorValue.Type,
 		}
 		if monitorValue.Type == entity.TypeCounter {
-			int64Value := int64(*monitorValue.Delta)
+			int64Value := int64(monitorValue.Delta)
 			m.Delta = &int64Value
 		}
 		if monitorValue.Type == entity.TypeGauge {
-			float64Value := float64(*monitorValue.Value)
+			float64Value := float64(monitorValue.Value)
 			m.Value = &float64Value
 		}
 		metricsList = append(metricsList, m)

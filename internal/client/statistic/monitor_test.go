@@ -40,10 +40,10 @@ func TestMonitor_collectStat(t *testing.T) {
 
 			pollCount, pollCountExist := monitor.Data["PollCount"]
 			require.True(t, pollCountExist)
-			assert.Equal(t, 1, *pollCount.Delta)
+			assert.Equal(t, 1, pollCount.Delta)
 			randomValue, randomValueExist := monitor.Data["RandomValue"]
 			require.True(t, randomValueExist)
-			if *randomValue.Value <= 0 {
+			if randomValue.Value <= 0 {
 				t.Errorf("invalid random value")
 			}
 		})
