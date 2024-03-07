@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -31,5 +32,9 @@ func main() {
 		time.Duration(cnfg.ReportInterval)*time.Second,
 		sender.SendReport,
 	)
+	db, err := sql.Open("", "")
+	tx, err := db.Begin()
+	tx.Query("")
+
 	select {}
 }

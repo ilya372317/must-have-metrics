@@ -30,3 +30,4 @@ vendor/
 .env-server
 .env-agent
 machinet.conf
+/my-lint
