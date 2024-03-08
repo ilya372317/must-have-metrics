@@ -11,7 +11,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/service"
 )
 
-type UpdateStorage interface {
+type updateStorage interface {
 	Save(ctx context.Context, name string, alert entity.Alert) error
 	Update(ctx context.Context, name string, alert entity.Alert) error
 	Get(ctx context.Context, name string) (entity.Alert, error)
@@ -20,7 +20,8 @@ type UpdateStorage interface {
 	Fill(context.Context, map[string]entity.Alert) error
 }
 
-func UpdateHandler(storage UpdateStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
+// UpdateHandler allow update specific metric by request in plain text format.
+func UpdateHandler(storage updateStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		metrics, err := dto.NewMetricsDTOFromRequestParams(request)
 		if err != nil {

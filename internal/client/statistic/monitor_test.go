@@ -40,12 +40,26 @@ func TestMonitor_collectStat(t *testing.T) {
 
 			pollCount, pollCountExist := monitor.Data["PollCount"]
 			require.True(t, pollCountExist)
-			assert.Equal(t, 1, *pollCount.Delta)
+			assert.Equal(t, 1, pollCount.Delta)
 			randomValue, randomValueExist := monitor.Data["RandomValue"]
 			require.True(t, randomValueExist)
-			if *randomValue.Value <= 0 {
+			if randomValue.Value <= 0 {
 				t.Errorf("invalid random value")
 			}
 		})
+	}
+}
+
+func BenchmarkMonitor_collectStat1(b *testing.B) {
+	b.ReportAllocs()
+	b.StopTimer()
+	m := Monitor{
+		Data:         make(map[string]MonitorValue),
+		ReportTaskCh: make(chan func(), 10),
+	}
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		m.collectStat()
 	}
 }

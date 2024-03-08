@@ -8,11 +8,12 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type PingStorage interface {
+type pingStorage interface {
 	Ping() error
 }
 
-func PingHandler(repository PingStorage) http.HandlerFunc {
+// PingHandler allow to check connection with storage.
+func PingHandler(repository pingStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		if pingErr := repository.Ping(); pingErr != nil {
 			http.Error(

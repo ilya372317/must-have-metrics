@@ -25,10 +25,12 @@ const (
 	stepForDelayRetry            = 2
 )
 
+// DatabaseStorage database storage.
 type DatabaseStorage struct {
 	DB *sql.DB
 }
 
+// Save given record to database.
 func (d *DatabaseStorage) Save(ctx context.Context, name string, alert entity.Alert) error {
 	operation := func() error {
 		_, err := d.DB.ExecContext(ctx,
@@ -43,6 +45,7 @@ func (d *DatabaseStorage) Save(ctx context.Context, name string, alert entity.Al
 	return withRetries(operation)
 }
 
+// Update given record in database.
 func (d *DatabaseStorage) Update(ctx context.Context, name string, alert entity.Alert) error {
 	operation := func() error {
 		_, err := d.DB.ExecContext(ctx,
@@ -56,6 +59,7 @@ func (d *DatabaseStorage) Update(ctx context.Context, name string, alert entity.
 	return withRetries(operation)
 }
 
+// Get retrieve records from database by given name.
 func (d *DatabaseStorage) Get(ctx context.Context, name string) (entity.Alert, error) {
 	resultAlert := entity.Alert{}
 	operation := func() error {
@@ -89,6 +93,7 @@ func (d *DatabaseStorage) Get(ctx context.Context, name string) (entity.Alert, e
 	return resultAlert, nil
 }
 
+// Has checked for database contains records with given name.
 func (d *DatabaseStorage) Has(ctx context.Context, name string) (bool, error) {
 	var id string
 	var result bool
@@ -116,6 +121,7 @@ func (d *DatabaseStorage) Has(ctx context.Context, name string) (bool, error) {
 	return result, nil
 }
 
+// All retrieve all records from database.
 func (d *DatabaseStorage) All(ctx context.Context) ([]entity.Alert, error) {
 	alerts := make([]entity.Alert, 0, 100) //nolint:nolintlint,gomnd
 
@@ -157,6 +163,7 @@ func (d *DatabaseStorage) All(ctx context.Context) ([]entity.Alert, error) {
 	return alerts, nil
 }
 
+// AllWithKeys retrieve all records from database in map representation.
 func (d *DatabaseStorage) AllWithKeys(ctx context.Context) (map[string]entity.Alert, error) {
 	alerts := make(map[string]entity.Alert)
 	operation := func() error {
@@ -189,6 +196,7 @@ func (d *DatabaseStorage) AllWithKeys(ctx context.Context) (map[string]entity.Al
 	return alerts, nil
 }
 
+// Fill delete all records from database and save given.
 func (d *DatabaseStorage) Fill(ctx context.Context, m map[string]entity.Alert) error {
 	operation := func() error {
 		tx, err := d.DB.BeginTx(ctx, nil)
@@ -227,22 +235,29 @@ func (d *DatabaseStorage) Fill(ctx context.Context, m map[string]entity.Alert) e
 	return withRetries(operation)
 }
 
+// BulkInsertOrUpdate if record exist, saving them to database. Otherwise updating it.
 func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error {
 	operation := func() error {
 		tx, err := d.DB.BeginTx(ctx, nil)
 		if err != nil {
 			return fmt.Errorf("failed begin transaction on insert or update: %w", err)
 		}
+		defer func() {
+			if p := recover(); p != nil {
+				_ = tx.Rollback()
+				panic(p)
+			} else if err != nil {
+				_ = tx.Rollback()
+			} else {
+				err = tx.Commit()
+			}
+		}()
 
 		preparedQuery, err := tx.PrepareContext(ctx, `INSERT INTO metrics ("id", "type", "float_value", "int_value") 
 	VALUES ($1, $2, $3, $4) 
 	ON CONFLICT (id) 
 	DO UPDATE SET "type" = excluded.type, "float_value" = excluded.float_value, "int_value" = excluded.int_value`)
-
 		if err != nil {
-			if err = tx.Rollback(); err != nil {
-				logger.Log.Warnf(failedRollbackErrPattern, err)
-			}
 			return fmt.Errorf("failed prepare query on update or insert: %w", err)
 		}
 		defer func() {
@@ -250,17 +265,9 @@ func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entit
 		}()
 
 		for _, alert := range alerts {
-			_, err = preparedQuery.ExecContext(ctx, alert.Name, alert.Type, alert.FloatValue, alert.IntValue)
-			if err != nil {
-				if err = tx.Rollback(); err != nil {
-					logger.Log.Warnf(failedRollbackErrPattern, err)
-				}
+			if _, err = preparedQuery.ExecContext(ctx, alert.Name, alert.Type, alert.FloatValue, alert.IntValue); err != nil {
 				return fmt.Errorf("failed insert alert %v: %w", alert, err)
 			}
-		}
-
-		if err = tx.Commit(); err != nil {
-			return fmt.Errorf("failed commit changes on update or insert: %w", err)
 		}
 
 		return nil
@@ -268,6 +275,7 @@ func (d *DatabaseStorage) BulkInsertOrUpdate(ctx context.Context, alerts []entit
 	return withRetries(operation)
 }
 
+// GetByIDs retrieve all records from database with given ids.
 func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error) {
 	if len(ids) == 0 {
 		return []entity.Alert{}, nil
@@ -325,6 +333,7 @@ func (d *DatabaseStorage) GetByIDs(ctx context.Context, ids []string) ([]entity.
 	return alerts, nil
 }
 
+// Ping make test request to database for check connection.
 func (d *DatabaseStorage) Ping() error {
 	if pingErr := d.DB.Ping(); pingErr != nil {
 		return fmt.Errorf("failed ping database connection: %w", pingErr)
@@ -352,6 +361,7 @@ func withRetries(fn func() error) error {
 		if !isRetriableError(err) {
 			return err
 		}
+		logger.Log.Warnf("Attempt %d failed: %v. Retrying in %v...", attempt+1, err, delay)
 		time.Sleep(delay)
 		delay += time.Second * stepForDelayRetry
 	}

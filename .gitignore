@@ -30,3 +30,6 @@ vendor/
 .env-server
 .env-agent
 machinet.conf
+
+# MAC OS files
+.DS_Store

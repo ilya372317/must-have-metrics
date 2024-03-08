@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"net/http"
+	"net/http/pprof"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/config"
@@ -11,6 +12,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
 )
 
+// AlertStorage interface with all storage methods. Different handler will use different methods from here.
 type AlertStorage interface {
 	Save(ctx context.Context, name string, alert entity.Alert) error
 	Update(ctx context.Context, name string, alert entity.Alert) error
@@ -24,6 +26,7 @@ type AlertStorage interface {
 	Ping() error
 }
 
+// AlertRouter return configured router.
 func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.WithLogging(), middleware.Compressed())
@@ -46,5 +49,10 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 	router.Route("/value/{type}/{name}", func(r chi.Router) {
 		r.Get("/", handlers.ShowHandler(repository))
 	})
+	router.HandleFunc("/debug/pprof/*", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	return router
 }

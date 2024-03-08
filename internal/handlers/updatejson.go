@@ -12,7 +12,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/service"
 )
 
-type UpdateJSONStorage interface {
+type updateJSONStorage interface {
 	Save(ctx context.Context, name string, alert entity.Alert) error
 	Update(ctx context.Context, name string, alert entity.Alert) error
 	Get(ctx context.Context, name string) (entity.Alert, error)
@@ -23,7 +23,8 @@ type UpdateJSONStorage interface {
 	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
 }
 
-func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
+// UpdateJSONHandler allow to update specific metric by request in json format.
+func UpdateJSONHandler(storage updateJSONStorage, serverConfig *config.ServerConfig) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
 		metrics, err := dto.NewMetricsDTOFromRequest(request)
@@ -41,7 +42,7 @@ func UpdateJSONHandler(storage UpdateJSONStorage, serverConfig *config.ServerCon
 			logger.Log.Warn(err)
 			return
 		}
-		responseMetric := dto.NewMetricsDTOFromAlert(*newAlert)
+		responseMetric := dto.NewMetricsDTOFromAlert(newAlert)
 		response, err := json.Marshal(&responseMetric)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
