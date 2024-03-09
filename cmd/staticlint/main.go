@@ -41,7 +41,6 @@ import (
 	"golang.org/x/tools/go/analysis/passes/nilness"
 	"golang.org/x/tools/go/analysis/passes/printf"
 	"golang.org/x/tools/go/analysis/passes/reflectvaluecompare"
-	"golang.org/x/tools/go/analysis/passes/shadow"
 	"golang.org/x/tools/go/analysis/passes/shift"
 	"golang.org/x/tools/go/analysis/passes/sigchanyzer"
 	"golang.org/x/tools/go/analysis/passes/slog"
@@ -120,8 +119,6 @@ func main() {
 		printf.Analyzer,
 		// Analyzer that checks for accidentally using == or reflect.DeepEqual to compare reflect.Value values.
 		reflectvaluecompare.Analyzer,
-		// Analyzer that checks for shadowed variables.
-		shadow.Analyzer,
 		// Analyzer that checks for shifts that exceed the width of an integer.
 		shift.Analyzer,
 		// Analyzer that detects misuse of unbuffered signal as argument to signal.Notify.

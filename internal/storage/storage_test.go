@@ -163,8 +163,8 @@ func TestInMemoryStorage_UpdateAlert(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		wantErr bool
 		want    testAlert
+		wantErr bool
 	}{
 		{
 			name: "positive case",

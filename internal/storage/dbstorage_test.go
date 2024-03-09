@@ -236,10 +236,10 @@ func TestSave(t *testing.T) {
 func TestDatabaseStorage_Get(t *testing.T) {
 	tests := []struct {
 		name    string
-		wantErr bool
+		arg     string
 		want    entity.Alert
 		fields  []entity.Alert
-		arg     string
+		wantErr bool
 	}{
 		{
 			name:    "success simple case",

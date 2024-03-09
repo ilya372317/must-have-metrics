@@ -34,11 +34,11 @@ func Test_addAlert(t *testing.T) {
 		dto  dto.Metrics
 	}
 	tests := []struct {
+		fields  map[string]testAlert
 		name    string
 		args    args
-		fields  map[string]testAlert
-		wantErr bool
 		want    testAlert
+		wantErr bool
 	}{
 		{
 			name: "success counter empty storage case",
@@ -153,11 +153,11 @@ func Test_updateCounterAlert(t *testing.T) {
 		repo *storage.InMemoryStorage
 	}
 	tests := []struct {
+		fields  map[string]testAlert
 		name    string
 		args    args
-		fields  map[string]testAlert
-		wantErr bool
 		want    testAlert
+		wantErr bool
 	}{
 		{
 			name: "success case with empty storage",
@@ -231,8 +231,8 @@ func Test_updateGaugeAlert(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		wantErr bool
 		want    testAlert
+		wantErr bool
 	}{
 		{
 			name: "positive test",
@@ -305,8 +305,8 @@ func newAlertFromTestAlert(testAlert testAlert) entity.Alert {
 func Test_FillAndSaveFromFile(t *testing.T) {
 	tests := []struct {
 		name           string
-		items          []testAlert
 		filepath       string
+		items          []testAlert
 		wantFillErr    bool
 		wantRestoreErr bool
 	}{

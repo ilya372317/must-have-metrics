@@ -6,10 +6,10 @@ const (
 )
 
 type Alert struct {
+	IntValue   *int64
+	FloatValue *float64
 	Type       string
 	Name       string
-	FloatValue *float64
-	IntValue   *int64
 }
 
 func MakeGaugeAlert(name string, data float64) Alert {
