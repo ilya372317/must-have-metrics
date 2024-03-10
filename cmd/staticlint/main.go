@@ -12,6 +12,7 @@ package main
 
 import (
 	"github.com/ilya372317/must-have-metrics/internal/config"
+	"github.com/ilya372317/must-have-metrics/pgk/analysis/mainexit"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/appends"
@@ -151,6 +152,8 @@ func main() {
 		unusedwrite.Analyzer,
 		// Analyzer that checks for usage of generic features added in Go 1.18.
 		usesgenerics.Analyzer,
+		// Analyzer that checks for main fucnction not calling os.Exit().
+		mainexit.Analyzer,
 	}
 
 	// SE analyzers from staticheck library
