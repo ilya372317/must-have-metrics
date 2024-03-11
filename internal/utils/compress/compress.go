@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// Do compress given data by gzip algo.
 func Do(data []byte) ([]byte, error) {
 	var b bytes.Buffer
 	w, err := gzip.NewWriterLevel(&b, gzip.BestCompression)
@@ -23,6 +24,7 @@ func Do(data []byte) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// Decompress decompres given data by gzip algo.
 func Decompress(data []byte) ([]byte, error) {
 	r, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {

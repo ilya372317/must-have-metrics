@@ -1,0 +1,3 @@
+#!/bin/bash
+
+vegeta attack -targets=targets.txt --duration=40s -rate=400 > report.bin

@@ -10,11 +10,12 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-type ShowStorage interface {
+type showStorage interface {
 	Get(ctx context.Context, name string) (entity.Alert, error)
 }
 
-func ShowHandler(strg ShowStorage) http.HandlerFunc {
+// ShowHandler allow to view value of specific metric.
+func ShowHandler(strg showStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		showDTO := dto.CreateShowAlertDTOFromRequest(r)
 		if _, err := showDTO.Validate(); err != nil {

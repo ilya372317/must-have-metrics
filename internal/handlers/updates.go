@@ -12,7 +12,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/service"
 )
 
-type BulkUpdateStorage interface {
+type bulkUpdateStorage interface {
 	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
 	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
 	Get(ctx context.Context, name string) (entity.Alert, error)
@@ -21,7 +21,8 @@ type BulkUpdateStorage interface {
 	Update(ctx context.Context, name string, alert entity.Alert) error
 }
 
-func BulkUpdate(storage BulkUpdateStorage) http.HandlerFunc {
+// BulkUpdate allow to update multiply metrics by request in json format.
+func BulkUpdate(storage bulkUpdateStorage) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
 		metricsList, err := dto.NewMetricsListDTOFromRequest(request)

@@ -1,0 +1,162 @@
+[
+  {
+    "id": "GCCPUFraction",
+    "type": "gauge",
+    "value": 0
+  },
+  {
+    "id": "RandomValue",
+    "type": "gauge",
+    "value": 26
+  },
+  {
+    "id": "PollCount",
+    "type": "counter",
+    "delta": 0
+  },
+  {
+    "id": "Sys",
+    "type": "gauge",
+    "value": 12602384
+  },
+  {
+    "id": "GCSys",
+    "type": "gauge",
+    "value": 2904040
+  },
+  {
+    "id": "HeapIdle",
+    "type": "gauge",
+    "value": 3194880
+  },
+  {
+    "id": "HeapReleased",
+    "type": "gauge",
+    "value": 1982464
+  },
+  {
+    "id": "MCacheInuse",
+    "type": "gauge",
+    "value": 9600
+  },
+  {
+    "id": "OtherSys",
+    "type": "gauge",
+    "value": 1205034
+  },
+  {
+    "id": "FreeMemory",
+    "type": "gauge",
+    "value": 83935232
+  },
+  {
+    "id": "Alloc",
+    "type": "gauge",
+    "value": 3193456
+  },
+  {
+    "id": "NumForcedGC",
+    "type": "gauge",
+    "value": 0
+  },
+  {
+    "id": "Lookups",
+    "type": "gauge",
+    "value": 0
+  },
+  {
+    "id": "MCacheSys",
+    "type": "gauge",
+    "value": 15600
+  },
+  {
+    "id": "Mallocs",
+    "type": "gauge",
+    "value": 55249
+  },
+  {
+    "id": "Frees",
+    "type": "gauge",
+    "value": 51956
+  },
+  {
+    "id": "CPUutilization1",
+    "type": "gauge",
+    "value": 45
+  },
+  {
+    "id": "HeapObjects",
+    "type": "gauge",
+    "value": 3293
+  },
+  {
+    "id": "MSpanInuse",
+    "type": "gauge",
+    "value": 125600
+  },
+  {
+    "id": "MSpanSys",
+    "type": "gauge",
+    "value": 130560
+  },
+  {
+    "id": "PauseTotalNs",
+    "type": "gauge",
+    "value": 9499288
+  },
+  {
+    "id": "StackInuse",
+    "type": "gauge",
+    "value": 753664
+  },
+  {
+    "id": "HeapInuse",
+    "type": "gauge",
+    "value": 4390912
+  },
+  {
+    "id": "HeapSys",
+    "type": "gauge",
+    "value": 7585792
+  },
+  {
+    "id": "NumGC",
+    "type": "gauge",
+    "value": 45
+  },
+  {
+    "id": "TotalMemory",
+    "type": "gauge",
+    "value": 17179869184
+  },
+  {
+    "id": "LastGC",
+    "type": "gauge",
+    "value": 1709210736569301000
+  },
+  {
+    "id": "BuckHashSys",
+    "type": "gauge",
+    "value": 7694
+  },
+  {
+    "id": "TotalAlloc",
+    "type": "gauge",
+    "value": 108699584
+  },
+  {
+    "id": "StackSys",
+    "type": "gauge",
+    "value": 753664
+  },
+  {
+    "id": "HeapAlloc",
+    "type": "gauge",
+    "value": 3193456
+  },
+  {
+    "id": "NextGC",
+    "type": "gauge",
+    "value": 4194304
+  }
+]

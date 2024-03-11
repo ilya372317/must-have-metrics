@@ -1,3 +1,4 @@
+// Application for retrieving metrics from the operating system and sending them to a server
 package main
 
 import (

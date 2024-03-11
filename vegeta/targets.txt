@@ -1,0 +1,19 @@
+POST http://localhost:8080/updates
+HashSHA256: UfgwF74YFz6e/9Os2KPTUras6zEMrbsdi9+JwnN3vtU=
+@updates_body.json
+
+GET http://localhost:8080/ping
+
+POST http://localhost:8080/value
+@show_body.json
+
+POST http://localhost:8080/update
+@update_body.json
+
+GET http://localhost:8080
+
+POST http://localhost:8080/update/gauge/HeapObjects/3293
+
+GET http://localhost:8080/value/gauge/GCCPUFraction
+
+

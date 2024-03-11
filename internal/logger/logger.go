@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Log public logger instance.
 var Log *zap.SugaredLogger
 
 const (
@@ -16,6 +17,7 @@ const (
 	logFilePermission = 0750
 )
 
+// Init initialize logger for next using.
 func Init() error {
 	if Log != nil {
 		return nil

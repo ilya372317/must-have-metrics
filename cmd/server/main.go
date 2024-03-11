@@ -1,3 +1,8 @@
+// Application for collecting metrics sent by clients
+//
+// It is capable of storing data both in memory and in a database.
+// Save its state to a file and restore it.
+// It also supports multiple routes for receiving metrics in string or JSON format.
 package main
 
 import (

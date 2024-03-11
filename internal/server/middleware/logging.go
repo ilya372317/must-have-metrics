@@ -33,6 +33,7 @@ func (w *loggingResponseWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
+// WithLogging logging info about all endpoints.
 func WithLogging() Middleware {
 	return func(h http.Handler) http.Handler {
 		logFn := func(w http.ResponseWriter, r *http.Request) {
