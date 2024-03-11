@@ -149,8 +149,8 @@ func Test_addAlert(t *testing.T) {
 
 func Test_updateCounterAlert(t *testing.T) {
 	type args struct {
-		dto  dto.Metrics
 		repo *storage.InMemoryStorage
+		dto  dto.Metrics
 	}
 	tests := []struct {
 		fields  map[string]testAlert
@@ -225,8 +225,8 @@ func Test_updateCounterAlert(t *testing.T) {
 
 func Test_updateGaugeAlert(t *testing.T) {
 	type args struct {
-		dto        dto.Metrics
 		repository *storage.InMemoryStorage
+		dto        dto.Metrics
 	}
 	tests := []struct {
 		name    string

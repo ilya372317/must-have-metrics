@@ -339,7 +339,7 @@ func TestAlertRouter(t *testing.T) {
 			}()
 			assert.Equal(t, tt.want.status, resp.StatusCode)
 			if tt.want.body != "" {
-				assert.Equal(t, tt.want.body, responseBody)
+				assert.JSONEq(t, tt.want.body, responseBody)
 			}
 			strg.Reset()
 		})

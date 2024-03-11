@@ -31,6 +31,5 @@ func main() {
 		time.Duration(cnfg.ReportInterval)*time.Second,
 		sender.SendReport,
 	)
-
 	select {}
 }
