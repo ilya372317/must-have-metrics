@@ -25,6 +25,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const defaultTagValue = "N/A"
+
+var (
+	buildVersion = defaultTagValue
+	buildDate    = defaultTagValue
+	buildCommit  = defaultTagValue
+)
+
 func main() {
 	if err := logger.Init(); err != nil {
 		panic(fmt.Errorf("failed init logger for server: %w", err))
@@ -68,6 +76,13 @@ func run() error {
 			logger.Log.Warn(err)
 		}
 	}
+
+	fmt.Printf(
+		"Build version: %s\nBuild date: %s\nBuild commit: %s\n",
+		buildVersion,
+		buildDate,
+		buildCommit,
+	)
 	logger.Log.Infof("server is starting...")
 	err = http.ListenAndServe(
 		cnfg.Host,
