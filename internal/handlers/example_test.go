@@ -131,7 +131,7 @@ func ExampleShowJSONHandler() {
 	fmt.Printf("Body: %s", body)
 	// Output:
 	// Status code: 200
-	// Body: {"id":"metric","type":"gauge","value":1.1}
+	// Body: {"value":1.1,"id":"metric","type":"gauge"}
 }
 
 func ExampleUpdateHandler() {
@@ -182,7 +182,7 @@ func ExampleUpdateJSONHandler() {
 	fmt.Printf("Body: %s\n", body)
 	// Output:
 	// Status code: 200
-	// Body: {"id":"metric","type":"gauge","value":2.1}
+	// Body: {"value":2.1,"id":"metric","type":"gauge"}
 }
 
 func ExampleBulkUpdate() {
@@ -207,7 +207,7 @@ func ExampleBulkUpdate() {
 	fmt.Printf("Body: %s\n", body)
 	// Output:
 	// Status code: 200
-	// Body: [{"id":"metric","type":"gauge","value":2.1}]
+	// Body: [{"value":2.1,"id":"metric","type":"gauge"}]
 }
 
 func floatPointer(val float64) *float64 {
