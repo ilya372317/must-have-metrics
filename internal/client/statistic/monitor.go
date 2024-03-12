@@ -74,9 +74,9 @@ func (monitor *Monitor) Shutdown() {
 // MonitorValue representation of collected metric.
 type MonitorValue struct {
 	Name  string
+	Type  string
 	Value uint64
 	Delta int
-	Type  string
 }
 
 // CollectStat method for collect metrics from operating system.

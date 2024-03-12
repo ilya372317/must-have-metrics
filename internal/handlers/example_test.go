@@ -101,10 +101,10 @@ func ExampleShowHandler() {
 
 func ExampleShowJSONHandler() {
 	rMetric := struct {
+		Delta *int64   `json:"delta,omitempty" valid:"optional"`
+		Value *float64 `json:"value,omitempty" valid:"optional"`
 		ID    string   `json:"id" valid:"type(string)"`
 		MType string   `json:"type" valid:"in(gauge|counter)"`
-		Value *float64 `json:"value,omitempty" valid:"optional"`
-		Delta *int64   `json:"delta,omitempty" valid:"optional"`
 	}{
 		ID:    "metric",
 		MType: "gauge",
