@@ -7,14 +7,14 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/utils/compress"
 )
 
-const bodyIsNotStringErrMsg = "request body not a string"
+var bodyIsNotStringErr = fmt.Errorf("request body not a string")
 
 // WithCompress middleware for compressing requests sent to the server.
 func WithCompress() resty.RequestMiddleware {
 	return func(client *resty.Client, request *resty.Request) error {
 		body, ok := request.Body.(string)
 		if !ok {
-			return fmt.Errorf(bodyIsNotStringErrMsg)
+			return bodyIsNotStringErr
 		}
 
 		compressedBody, err := compress.Do([]byte(body))
