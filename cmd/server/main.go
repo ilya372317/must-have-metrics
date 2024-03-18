@@ -77,11 +77,10 @@ func run() error {
 		}
 	}
 
-	fmt.Printf(
-		"Build version: %s\nBuild date: %s\nBuild commit: %s\n",
-		buildVersion,
-		buildDate,
-		buildCommit,
+	fmt.Println(
+		"Build version: ", buildVersion, "\n",
+		"Build date: ", buildDate, "\n",
+		"Build commit: ", buildCommit,
 	)
 	logger.Log.Infof("server is starting...")
 	err = http.ListenAndServe(

@@ -40,11 +40,10 @@ func main() {
 		time.Duration(cnfg.ReportInterval)*time.Second,
 		sender.SendReport,
 	)
-	fmt.Printf(
-		"Build version: %s\nBuild date: %s\nBuild commit: %s\n",
-		buildVersion,
-		buildDate,
-		buildCommit,
+	fmt.Println(
+		"Build version: ", buildVersion, "\n",
+		"Build date: ", buildDate, "\n",
+		"Build commit: ", buildCommit,
 	)
 	select {}
 }
