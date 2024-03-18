@@ -30,6 +30,7 @@ vendor/
 .env-server
 .env-agent
 machinet.conf
+/my-lint
 
 # MAC OS files
 .DS_Store

@@ -26,9 +26,9 @@ func TestIndexHandler(t *testing.T) {
 		code     int
 	}
 	tests := []struct {
+		fields map[string]TestAlert
 		name   string
 		want   want
-		fields map[string]TestAlert
 	}{
 		{
 			name: "success test case",

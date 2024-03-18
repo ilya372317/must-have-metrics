@@ -11,10 +11,10 @@ import (
 type ServerConfig struct {
 	Host          string `env:"ADDRESS"`
 	FilePath      string `env:"FILE_STORAGE_PATH"`
-	Restore       bool   `env:"RESTORE"`
-	StoreInterval uint   `env:"STORE_INTERVAL"`
 	DatabaseDSN   string `env:"DATABASE_DSN"`
 	SecretKey     string `env:"KEY"`
+	StoreInterval uint   `env:"STORE_INTERVAL"`
+	Restore       bool   `env:"RESTORE"`
 }
 
 // NewServer constructor for ServerConfig.

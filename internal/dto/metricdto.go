@@ -26,10 +26,10 @@ func NewMetricsListDTOFromRequest(r *http.Request) (MetricsList, error) {
 
 // Metrics DTO for representing received metrics from agent.
 type Metrics struct {
+	Delta *int64   `json:"delta,omitempty" valid:"optional"` // Значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty" valid:"optional"` // Значение метрики в случае передачи gauge
 	ID    string   `json:"id" valid:"type(string)"`          // Имя метрики
 	MType string   `json:"type" valid:"in(gauge|counter)"`   // параметр, принимающий значение gauge или counter
-	Value *float64 `json:"value,omitempty" valid:"optional"` // Значение метрики в случае передачи gauge
-	Delta *int64   `json:"delta,omitempty" valid:"optional"` // Значение метрики в случае передачи counter
 }
 
 // NewMetricsDTOFromRequest create Metrics DTO from given request.

@@ -35,11 +35,11 @@ func Test_addAlert(t *testing.T) {
 		dto  dto.Metrics
 	}
 	tests := []struct {
+		fields  map[string]testAlert
 		name    string
 		args    args
-		fields  map[string]testAlert
-		wantErr bool
 		want    testAlert
+		wantErr bool
 	}{
 		{
 			name: "success counter empty storage case",
@@ -150,15 +150,15 @@ func Test_addAlert(t *testing.T) {
 
 func Test_updateCounterAlert(t *testing.T) {
 	type args struct {
-		dto  dto.Metrics
 		repo *storage.InMemoryStorage
+		dto  dto.Metrics
 	}
 	tests := []struct {
+		fields  map[string]testAlert
 		name    string
 		args    args
-		fields  map[string]testAlert
-		wantErr bool
 		want    testAlert
+		wantErr bool
 	}{
 		{
 			name: "success case with empty storage",
@@ -226,14 +226,14 @@ func Test_updateCounterAlert(t *testing.T) {
 
 func Test_updateGaugeAlert(t *testing.T) {
 	type args struct {
-		dto        dto.Metrics
 		repository *storage.InMemoryStorage
+		dto        dto.Metrics
 	}
 	tests := []struct {
 		name    string
 		args    args
-		wantErr bool
 		want    testAlert
+		wantErr bool
 	}{
 		{
 			name: "positive test",
@@ -306,8 +306,8 @@ func newAlertFromTestAlert(testAlert testAlert) entity.Alert {
 func Test_FillAndSaveFromFile(t *testing.T) {
 	tests := []struct {
 		name           string
-		items          []testAlert
 		filepath       string
+		items          []testAlert
 		wantFillErr    bool
 		wantRestoreErr bool
 	}{
@@ -442,4 +442,55 @@ func intPointer(value int64) *int64 {
 
 func floatPointer(value float64) *float64 {
 	return &value
+}
+
+func TestBulkAddAlerts(t *testing.T) {
+	tests := []struct {
+		name    string
+		metrics []dto.Metrics
+		want    []entity.Alert
+	}{
+		{
+			name:    "success empty storage case",
+			metrics: []dto.Metrics{},
+			want:    []entity.Alert{},
+		},
+		{
+			name: "success case with filled storage",
+			metrics: []dto.Metrics{
+				{
+					Value: floatPointer(1.1),
+					ID:    "alert1",
+					MType: "gauge",
+				},
+				{
+					Delta: intPointer(1),
+					ID:    "alert2",
+					MType: "counter",
+				},
+			},
+			want: []entity.Alert{
+				{
+					FloatValue: floatPointer(1.1),
+					Type:       "gauge",
+					Name:       "alert1",
+				},
+				{
+					IntValue: intPointer(1),
+					Type:     "counter",
+					Name:     "alert2",
+				},
+			},
+		},
+	}
+	strg := storage.NewInMemoryStorage()
+	ctx := context.Background()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := BulkAddAlerts(ctx, strg, tt.metrics)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+		strg.Reset()
+	}
 }

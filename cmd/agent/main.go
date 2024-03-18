@@ -13,6 +13,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const defaultTagValue = "N/A"
+
+var (
+	buildVersion = defaultTagValue
+	buildDate    = defaultTagValue
+	buildCommit  = defaultTagValue
+)
+
 func main() {
 	if err := logger.Init(); err != nil {
 		panic(fmt.Errorf("failed init logger for agent: %w", err))
@@ -31,6 +39,11 @@ func main() {
 		cnfg,
 		time.Duration(cnfg.ReportInterval)*time.Second,
 		sender.SendReport,
+	)
+	fmt.Println(
+		"Build version: ", buildVersion, "\n",
+		"Build date: ", buildDate, "\n",
+		"Build commit: ", buildCommit,
 	)
 	select {}
 }

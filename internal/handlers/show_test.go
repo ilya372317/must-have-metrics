@@ -31,10 +31,10 @@ func TestShowHandler(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		want   want
 		fields map[string]testAlert
+		name   string
 		args   args
+		want   want
 	}{
 		{
 			name: "success simple test",

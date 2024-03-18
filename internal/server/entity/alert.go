@@ -7,10 +7,10 @@ const (
 
 // Alert entity representing metrics.
 type Alert struct {
+	IntValue   *int64
+	FloatValue *float64
 	Type       string
 	Name       string
-	FloatValue *float64
-	IntValue   *int64
 }
 
 // MakeGaugeAlert constructor from create gauge metric.

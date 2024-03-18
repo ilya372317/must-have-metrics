@@ -41,17 +41,17 @@ func TestAlertRouter(t *testing.T) {
 	}
 
 	type want struct {
-		status int
 		body   string
+		status int
 	}
 
 	var testTable = []struct {
+		fields      map[string]testAlert
 		name        string
 		url         string
 		method      string
-		fields      map[string]testAlert
-		want        want
 		requestBody string
+		want        want
 	}{
 		{
 			name: "index success case",
@@ -339,7 +339,7 @@ func TestAlertRouter(t *testing.T) {
 			}()
 			assert.Equal(t, tt.want.status, resp.StatusCode)
 			if tt.want.body != "" {
-				assert.Equal(t, tt.want.body, responseBody)
+				assert.JSONEq(t, tt.want.body, responseBody)
 			}
 			strg.Reset()
 		})
