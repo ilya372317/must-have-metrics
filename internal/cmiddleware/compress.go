@@ -12,7 +12,7 @@ func WithCompress() resty.RequestMiddleware {
 	return func(client *resty.Client, request *resty.Request) error {
 		body, ok := request.Body.(string)
 		if !ok {
-			return bodyIsNotStringErr
+			return errBodyIsNotString
 		}
 
 		compressedBody, err := compress.Do([]byte(body))

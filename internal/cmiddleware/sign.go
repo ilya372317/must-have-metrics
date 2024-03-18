@@ -12,7 +12,7 @@ func WithSignature(secretKey string) resty.RequestMiddleware {
 	return func(client *resty.Client, request *resty.Request) error {
 		body, ok := request.Body.(string)
 		if !ok {
-			return bodyIsNotStringErr
+			return errBodyIsNotString
 		}
 		sign := signature.CreateSign([]byte(body), secretKey)
 		encodeSing := base64.StdEncoding.EncodeToString(sign)
