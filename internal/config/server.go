@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/caarlos0/env"
 )
@@ -13,6 +14,7 @@ type ServerConfig struct {
 	FilePath      string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN   string `env:"DATABASE_DSN"`
 	SecretKey     string `env:"KEY"`
+	CryptoKey     string `env:"CRYPTO_KEY"`
 	StoreInterval uint   `env:"STORE_INTERVAL"`
 	Restore       bool   `env:"RESTORE"`
 }
@@ -43,6 +45,7 @@ func (c *ServerConfig) parseFlags() {
 	)
 	flag.StringVar(&c.DatabaseDSN, "d", "", "Database DSN string")
 	flag.StringVar(&c.SecretKey, "k", "", "Secret key for sign")
+	flag.StringVar(&c.CryptoKey, "crypto-key", "", "Private crypto key for RSA decryption")
 	flag.Parse()
 }
 
@@ -54,4 +57,17 @@ func (c *ServerConfig) ShouldConnectToDatabase() bool {
 // ShouldSignData check for server should sign response data.
 func (c *ServerConfig) ShouldSignData() bool {
 	return c.SecretKey != ""
+}
+
+// ShouldDecryptData check for server should decrypt request body.
+func (c *ServerConfig) ShouldDecryptData() bool {
+	if c.CryptoKey == "" {
+		return false
+	}
+
+	if _, err := os.Stat(c.CryptoKey); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
 }

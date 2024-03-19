@@ -83,13 +83,12 @@ func TestWithRSACipher(t *testing.T) {
 		},
 	}
 
-	hasher := sha256.New()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client := resty.New()
 			request := client.NewRequest()
-			request.SetBody(tt.body)
-			middleware := WithRSACipher(tt.pathToKeys)
+			request.SetBody([]byte(tt.body))
+			middleware := WithRSACrypt(tt.pathToKeys)
 			err := middleware(client, request)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -116,7 +115,7 @@ func TestWithRSACipher(t *testing.T) {
 					chunk = bodyData
 					bodyData = nil
 				}
-				uncipherData, err := rsa.DecryptOAEP(hasher, rand.Reader, privateKey, chunk, []byte(""))
+				uncipherData, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, chunk, []byte(""))
 				require.NoError(t, err)
 				decryptedData = append(decryptedData, uncipherData...)
 			}

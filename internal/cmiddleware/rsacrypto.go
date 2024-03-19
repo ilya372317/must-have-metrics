@@ -14,18 +14,17 @@ import (
 )
 
 const (
-	bitInBytes          = 8
 	hashLengthTimes     = 2
 	extraBytesForCipher = 2
 )
 
-// WithRSACipher Encrypt request body by public key.
+// WithRSACrypt Encrypt request body by public key.
 // Public key retrieve from file in publicKeyPath argument
-func WithRSACipher(publicKeyPath string) resty.RequestMiddleware {
+func WithRSACrypt(publicKeyPath string) resty.RequestMiddleware {
 	return func(client *resty.Client, request *resty.Request) error {
-		body, ok := request.Body.(string)
+		body, ok := request.Body.([]byte)
 		if !ok {
-			return fmt.Errorf("request body expected to be string")
+			return fmt.Errorf("request body expected to be byte slice")
 		}
 		publicKeyData, err := getPublicKeyData(publicKeyPath)
 		if err != nil {
@@ -40,8 +39,7 @@ func WithRSACipher(publicKeyPath string) resty.RequestMiddleware {
 
 		cipherBlockSize := (publickKey.Size()) - (sha256.Size * hashLengthTimes) - extraBytesForCipher
 		cipherData := make([]byte, 0)
-		message := []byte(body)
-		hasher := sha256.New()
+		message := body
 
 		for len(message) > 0 {
 			var chunk []byte
@@ -53,7 +51,7 @@ func WithRSACipher(publicKeyPath string) resty.RequestMiddleware {
 				message = nil
 			}
 
-			encryptData, err := rsa.EncryptOAEP(hasher, rand.Reader, publickKey, chunk, []byte(""))
+			encryptData, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, publickKey, chunk, []byte(""))
 			if err != nil {
 				return fmt.Errorf("failed chipher request body: %w", err)
 			}

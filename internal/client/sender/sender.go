@@ -19,10 +19,10 @@ func SendReport(agentConfig *config.AgentConfig, requestURL, body string) {
 	if agentConfig.ShouldSignData() {
 		c.OnBeforeRequest(cmiddleware.WithSignature(agentConfig.SecretKey))
 	}
-	if agentConfig.ShouldCipherData() {
-		c.OnBeforeRequest(cmiddleware.WithRSACipher(agentConfig.CryptoKey))
-	}
 	c.OnBeforeRequest(cmiddleware.WithCompress())
+	if agentConfig.ShouldCipherData() {
+		c.OnBeforeRequest(cmiddleware.WithRSACrypt(agentConfig.CryptoKey))
+	}
 
 	_, err := c.R().SetBody(body).
 		Post(requestURL)
