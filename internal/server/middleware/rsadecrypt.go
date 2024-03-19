@@ -70,7 +70,7 @@ func WithRSADecrypt(privateKeyPath string) Middleware {
 					chunk = base64RequestData
 					base64RequestData = nil
 				}
-				uncryptedData, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, chunk, []byte(""))
+				decryptedChunk, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, chunk, []byte(""))
 				if err != nil {
 					err = fmt.Errorf("failed decrypt request body: %w", err)
 					logger.Log.Error(err.Error())
@@ -81,7 +81,7 @@ func WithRSADecrypt(privateKeyPath string) Middleware {
 					)
 					return
 				}
-				decryptedData = append(decryptedData, uncryptedData...)
+				decryptedData = append(decryptedData, decryptedChunk...)
 			}
 			r.Body = io.NopCloser(bytes.NewReader(decryptedData))
 			h.ServeHTTP(w, r)
