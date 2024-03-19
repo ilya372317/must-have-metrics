@@ -42,9 +42,9 @@ func TestMain(m *testing.M) {
 func TestWithRSACipher(t *testing.T) {
 	tests := []struct {
 		name       string
-		wantErr    bool
 		body       string
 		pathToKeys string
+		wantErr    bool
 	}{
 		{
 			name:       "simple success case",
@@ -53,10 +53,16 @@ func TestWithRSACipher(t *testing.T) {
 			pathToKeys: keysDir + "/" + publicKeyPath,
 		},
 		{
-			name:       "given invalid path to public key",
+			name:       "given empty path to public key",
 			wantErr:    true,
 			body:       "test 123",
 			pathToKeys: "",
+		},
+		{
+			name:       "given invalid path to public key",
+			body:       "test123",
+			pathToKeys: "/invalid-path/file-not-exits.pem",
+			wantErr:    true,
 		},
 		{
 			name:    "very long body",
