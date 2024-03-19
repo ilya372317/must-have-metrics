@@ -24,6 +24,7 @@ import (
 const keysDir = "/tmp/cipher-test"
 const publicKeyPath = "public-key.pem"
 const privateKeyPath = "private-key.pem"
+const privateKeyFullPath = keysDir + "/" + privateKeyPath
 
 func TestMain(m *testing.M) {
 	if err := keygen.GenerateRSAKeys(keysDir, 4096); err != nil {
@@ -41,16 +42,52 @@ func TestMain(m *testing.M) {
 
 func TestWithRSADecrypt(t *testing.T) {
 	tests := []struct {
-		name       string
-		body       string
-		wantCode   int
-		encodeBody bool
+		name           string
+		body           string
+		privateKeyPath string
+		wantCode       int
+		encodeBody     bool
 	}{
 		{
-			name:       "simple success case",
-			body:       "test 123",
-			wantCode:   http.StatusOK,
-			encodeBody: true,
+			name:           "simple success case",
+			body:           "test 123",
+			wantCode:       http.StatusOK,
+			encodeBody:     true,
+			privateKeyPath: privateKeyFullPath,
+		},
+		{
+			name:           "invalid body encode",
+			body:           "test 123",
+			wantCode:       http.StatusBadRequest,
+			encodeBody:     false,
+			privateKeyPath: privateKeyFullPath,
+		},
+		{
+			name: "very long body",
+			body: "it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it " +
+				"it is very long body and it should be separate on chunks on cipher. Let`s try it ",
+			wantCode:       http.StatusOK,
+			encodeBody:     true,
+			privateKeyPath: privateKeyFullPath,
+		},
+		{
+			name:           "invalid key path",
+			body:           "test 123",
+			privateKeyPath: "/invalid-path/key.pem",
+			wantCode:       http.StatusInternalServerError,
+			encodeBody:     true,
 		},
 	}
 	for _, tt := range tests {
@@ -83,13 +120,12 @@ func TestWithRSADecrypt(t *testing.T) {
 			r := httptest.NewRequest(http.MethodPost, "/test", bytes.NewReader(cryptedBody))
 			w := httptest.NewRecorder()
 
-			middleware := WithRSADecrypt(keysDir + "/" + privateKeyPath)
+			middleware := WithRSADecrypt(tt.privateKeyPath)
 			handler := middleware(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 				rBody, err := io.ReadAll(request.Body)
 				require.NoError(t, err)
 				_, err = responseWriter.Write(rBody)
 				require.NoError(t, err)
-				return
 			}))
 			handler.ServeHTTP(w, r)
 
@@ -101,7 +137,9 @@ func TestWithRSADecrypt(t *testing.T) {
 			resBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantCode, res.StatusCode)
-			assert.Equal(t, tt.body, string(resBody))
+			if res.StatusCode == http.StatusOK {
+				assert.Equal(t, tt.body, string(resBody))
+			}
 		})
 	}
 }

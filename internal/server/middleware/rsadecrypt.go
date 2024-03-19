@@ -16,11 +16,6 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
 
-const (
-	hashLengthTimes     = 2
-	extraBytesForCipher = 2
-)
-
 // WithRSADecrypt middleware for decrypt given request body be RSA algo.
 func WithRSADecrypt(privateKeyPath string) Middleware {
 	return func(h http.Handler) http.Handler {
