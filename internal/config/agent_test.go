@@ -30,13 +30,13 @@ func TestAgentConfig_parseFromFile(t *testing.T) {
 		{
 			name: "success case with default base config",
 			baseConfig: AgentConfig{
-				Host:           defaultAddressValue,
-				SecretKey:      defaultSecretKeyValue,
-				CryptoKey:      defaultCryptoKeyValue,
-				PollInterval:   defaultPollIntervalValue,
-				ReportInterval: defaultReportIntervalValue,
-				RateLimit:      defaultRateLimitValue,
-				ConfigPath:     defaultConfigValue,
+				Host:           defaultAgentAddressValue,
+				SecretKey:      defaultAgentSecretKeyValue,
+				CryptoKey:      defaultAgentCryptoKeyValue,
+				PollInterval:   defaultAgentPollIntervalValue,
+				ReportInterval: defaultAgentReportIntervalValue,
+				RateLimit:      defaultAgentRateLimitValue,
+				ConfigPath:     defaultAgentConfigValue,
 			},
 			fileConfigs: AgentConfig{
 				Host:           "localhost:9090",

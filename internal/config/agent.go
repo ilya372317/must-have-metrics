@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	defaultRateLimitValue      = 1
-	defaultPollIntervalValue   = 2
-	defaultReportIntervalValue = 10
-	defaultAddressValue        = "localhost:8080"
-	defaultSecretKeyValue      = ""
-	defaultCryptoKeyValue      = ""
-	defaultConfigValue         = ""
+	defaultAgentRateLimitValue      = 1
+	defaultAgentPollIntervalValue   = 2
+	defaultAgentReportIntervalValue = 10
+	defaultAgentAddressValue        = "localhost:8080"
+	defaultAgentSecretKeyValue      = ""
+	defaultAgentCryptoKeyValue      = ""
+	defaultAgentConfigValue         = ""
 
 	nullStringValue = ""
 	nullIntValue    = 0
@@ -35,10 +35,10 @@ type AgentConfig struct {
 	Host           string `env:"ADDRESS" json:"address,omitempty"`
 	SecretKey      string `env:"KEY" json:"secret_key,omitempty"`
 	CryptoKey      string `env:"CRYPTO_KEY" json:"crypto_key,omitempty"`
+	ConfigPath     string `env:"CONFIG"`
 	PollInterval   uint   `env:"POLL_INTERVAL" json:"poll_interval,omitempty"`
 	ReportInterval uint   `env:"REPORT_INTERVAL" json:"report_interval,omitempty"`
 	RateLimit      uint   `env:"RATE_LIMIT" json:"rate_limit,omitempty"`
-	ConfigPath     string `env:"CONFIG"`
 }
 
 // NewAgent constructor for AgentConfig.
@@ -49,7 +49,7 @@ func NewAgent() (*AgentConfig, error) {
 		return nil, fmt.Errorf("failed parse agent flags: %w", err)
 	}
 	if err := agentConfig.parseFromFile(); err != nil {
-		return nil, fmt.Errorf("failed parse agent config from file: %w", err)
+		return nil, fmt.Errorf("failed create agent config: %w", err)
 	}
 
 	return agentConfig, nil
@@ -58,14 +58,14 @@ func NewAgent() (*AgentConfig, error) {
 func (c *AgentConfig) parseFlags() {
 	flag.StringVar(
 		&c.Host, "a",
-		defaultAddressValue, "address where server will listen requests",
+		defaultAgentAddressValue, "address where server will listen requests",
 	)
-	flag.UintVar(&c.PollInterval, "p", defaultPollIntervalValue, "interval agent collect metrics")
-	flag.UintVar(&c.ReportInterval, "r", defaultReportIntervalValue, "interval agent send metrics on server")
-	flag.StringVar(&c.SecretKey, "k", defaultSecretKeyValue, "secret key for sign")
-	flag.UintVar(&c.RateLimit, "l", defaultRateLimitValue, "limit of simultaneously requests to server")
-	flag.StringVar(&c.CryptoKey, "crypto-key", defaultCryptoKeyValue, "public crypto key for cipher transferred data")
-	flag.StringVar(&c.ConfigPath, "c", defaultConfigValue, "file path to json configuration file")
+	flag.UintVar(&c.PollInterval, "p", defaultAgentPollIntervalValue, "interval agent collect metrics")
+	flag.UintVar(&c.ReportInterval, "r", defaultAgentReportIntervalValue, "interval agent send metrics on server")
+	flag.StringVar(&c.SecretKey, "k", defaultAgentSecretKeyValue, "secret key for sign")
+	flag.UintVar(&c.RateLimit, "l", defaultAgentRateLimitValue, "limit of simultaneously requests to server")
+	flag.StringVar(&c.CryptoKey, "crypto-key", defaultAgentCryptoKeyValue, "public crypto key for cipher transferred data")
+	flag.StringVar(&c.ConfigPath, "c", defaultAgentConfigValue, "file path to json configuration file")
 	flag.Parse()
 }
 
@@ -79,28 +79,36 @@ func (c *AgentConfig) parseFromFile() error {
 		return fmt.Errorf("failed parse agent config from file: %w", err)
 	}
 
-	tempConfig := AgentConfig{}
+	tempConfig := AgentConfig{
+		Host:           defaultAgentAddressValue,
+		SecretKey:      defaultAgentSecretKeyValue,
+		CryptoKey:      defaultAgentCryptoKeyValue,
+		ConfigPath:     defaultAgentConfigValue,
+		PollInterval:   defaultAgentPollIntervalValue,
+		ReportInterval: defaultAgentReportIntervalValue,
+		RateLimit:      defaultAgentRateLimitValue,
+	}
 
 	if err = json.Unmarshal(fileContent, &tempConfig); err != nil {
 		return fmt.Errorf("invalid config file content: %w", err)
 	}
 
-	if c.Host == defaultAddressValue || c.Host == nullStringValue {
+	if c.Host == defaultAgentAddressValue || c.Host == nullStringValue {
 		c.Host = tempConfig.Host
 	}
-	if c.SecretKey == defaultSecretKeyValue {
+	if c.SecretKey == defaultAgentSecretKeyValue {
 		c.SecretKey = tempConfig.SecretKey
 	}
-	if c.CryptoKey == defaultCryptoKeyValue {
+	if c.CryptoKey == defaultAgentCryptoKeyValue {
 		c.CryptoKey = tempConfig.CryptoKey
 	}
-	if c.PollInterval == defaultPollIntervalValue || c.PollInterval == nullIntValue {
+	if c.PollInterval == defaultAgentPollIntervalValue || c.PollInterval == nullIntValue {
 		c.PollInterval = tempConfig.PollInterval
 	}
-	if c.ReportInterval == defaultReportIntervalValue || c.ReportInterval == nullIntValue {
+	if c.ReportInterval == defaultAgentReportIntervalValue || c.ReportInterval == nullIntValue {
 		c.ReportInterval = tempConfig.ReportInterval
 	}
-	if c.RateLimit == defaultRateLimitValue || c.RateLimit == nullIntValue {
+	if c.RateLimit == defaultAgentRateLimitValue || c.RateLimit == nullIntValue {
 		c.RateLimit = tempConfig.RateLimit
 	}
 
