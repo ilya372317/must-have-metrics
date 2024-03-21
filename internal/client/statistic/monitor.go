@@ -1,6 +1,7 @@
 package statistic
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"runtime"
@@ -52,6 +53,9 @@ func (monitor *Monitor) startWorker(workerID int) {
 		for {
 			reportTask, more := <-monitor.ReportTaskCh
 			if !more {
+				if len(monitor.ReportTaskCh) > 0 {
+					logger.Log.Error("Some task was not completed before monitor shutdown.")
+				}
 				logger.Log.Infof("Worker %d is stopping because the channel is closed.", workerID)
 				return
 			}
@@ -66,11 +70,6 @@ func (monitor *Monitor) startWorkerPool(poolSize uint) {
 	}
 }
 
-// Shutdown stop all process in monitor.
-func (monitor *Monitor) Shutdown() {
-	close(monitor.ReportTaskCh)
-}
-
 // MonitorValue representation of collected metric.
 type MonitorValue struct {
 	Name  string
@@ -80,11 +79,18 @@ type MonitorValue struct {
 }
 
 // CollectStat method for collect metrics from operating system.
-func (monitor *Monitor) CollectStat(pollInterval time.Duration) {
+func (monitor *Monitor) CollectStat(ctx context.Context, wg *sync.WaitGroup, pollInterval time.Duration) {
 	ticker := time.NewTicker(pollInterval)
-	for range ticker.C {
-		go monitor.collectStat()
-		go monitor.collectMemStat()
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			monitor.collectStat()
+			monitor.collectMemStat()
+		case <-ctx.Done():
+			wg.Done()
+			return
+		}
 	}
 }
 
@@ -144,27 +150,40 @@ func (monitor *Monitor) collectStat() {
 	monitor.Mutex.Unlock()
 }
 
-func (monitor *Monitor) ReportStat(agentConfig *config.AgentConfig, reportInterval time.Duration,
+func (monitor *Monitor) ReportStat(ctx context.Context, wg *sync.WaitGroup,
+	agentConfig *config.AgentConfig, reportInterval time.Duration,
 	reportSender sender.ReportSender) {
 	ticker := time.NewTicker(reportInterval)
-	for range ticker.C {
-		dataForSend := make([]MonitorValue, 0, len(monitor.Data))
-
-		monitor.Mutex.Lock()
-		for _, value := range monitor.Data {
-			dataForSend = append(dataForSend, value)
-		}
-		monitor.Mutex.Unlock()
-
-		dataChunks := chunkMonitorValueSlice(dataForSend, chunkForRequestSize)
-
-		for _, chunk := range dataChunks {
-			monitor.ReportTaskCh <- func() {
-				monitor.reportStat(agentConfig, reportSender, chunk)
+	defer ticker.Stop()
+	taskWg := &sync.WaitGroup{}
+	for {
+		select {
+		case <-ticker.C:
+			dataForSend := make([]MonitorValue, 0, len(monitor.Data))
+			monitor.Mutex.Lock()
+			for _, value := range monitor.Data {
+				dataForSend = append(dataForSend, value)
 			}
+			monitor.Mutex.Unlock()
+
+			dataChunks := chunkMonitorValueSlice(dataForSend, chunkForRequestSize)
+
+			for _, chunk := range dataChunks {
+				taskWg.Add(1)
+				monitor.ReportTaskCh <- func() {
+					defer taskWg.Done()
+					monitor.reportStat(agentConfig, reportSender, chunk)
+				}
+			}
+		case <-ctx.Done():
+			taskWg.Wait()
+			close(monitor.ReportTaskCh)
+			wg.Done()
+			return
 		}
 	}
 }
+
 func (monitor *Monitor) reportStat(agentConfig *config.AgentConfig,
 	reportSender sender.ReportSender,
 	data []MonitorValue,
