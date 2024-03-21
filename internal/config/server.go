@@ -86,7 +86,7 @@ func (c *ServerConfig) parseFromFile() error {
 		c.Host = tempConfig.Host
 	}
 
-	if c.Restore == defaultServerRestoreValue {
+	if c.Restore {
 		c.Restore = tempConfig.Restore
 	}
 
