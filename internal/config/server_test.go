@@ -47,11 +47,11 @@ func TestServerConfig_parseFromFile(t *testing.T) {
 	const tempFileConfigPath = "/tmp/server-config.json"
 	tests := []struct {
 		name        string
+		filePath    string
 		baseConfig  ServerConfig
 		fileConfigs ServerConfig
-		filePath    string
-		wantErr     bool
 		want        ServerConfig
+		wantErr     bool
 	}{
 		{
 			name:        "invalid file path case",

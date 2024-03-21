@@ -13,11 +13,11 @@ func TestAgentConfig_parseFromFile(t *testing.T) {
 	const tempFileConfigPath = "/tmp/agent-config.json"
 	tests := []struct {
 		name        string
+		filePath    string
 		baseConfig  AgentConfig
 		fileConfigs AgentConfig
-		filePath    string
-		wantErr     bool
 		want        AgentConfig
+		wantErr     bool
 	}{
 		{
 			name:        "invalid file path case",
