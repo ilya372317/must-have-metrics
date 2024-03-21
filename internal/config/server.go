@@ -49,7 +49,7 @@ func NewServer() (*ServerConfig, error) {
 func (c *ServerConfig) parseFlags() {
 	flag.StringVar(
 		&c.Host, "a",
-		defaultServerHostValue, "address where server will listen requests",
+		defaultServerHostValue, "address where server will listen request",
 	)
 	flag.StringVar(
 		&c.FilePath, "f",
