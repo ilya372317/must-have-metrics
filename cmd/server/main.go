@@ -11,6 +11,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/pgx"
@@ -68,8 +72,13 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	ctx, stop := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
+	wg := &sync.WaitGroup{}
+
 	if cnfg.StoreInterval > 0 {
-		go service.SaveDataToFilesystemByInterval(ctx, cnfg, repository)
+		wg.Add(1)
+		go service.SaveDataToFilesystemByInterval(ctx, wg, cnfg, repository)
 	}
 	if cnfg.Restore {
 		if err = service.FillFromFilesystem(ctx, repository, cnfg.FilePath); err != nil {
@@ -83,13 +92,26 @@ func run() error {
 		"Build commit: ", buildCommit,
 	)
 	logger.Log.Infof("server is starting...")
-	err = http.ListenAndServe(
-		cnfg.Host,
-		router.AlertRouter(repository, cnfg),
-	)
-	if err != nil {
+	srv := http.Server{
+		Addr:    cnfg.Host,
+		Handler: router.AlertRouter(repository, cnfg),
+	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		timeoutCtx, timeoutCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer timeoutCancel()
+		if err = srv.Shutdown(timeoutCtx); err != nil {
+			logger.Log.Errorf("filed shutdown server: %v", err)
+		}
+	}()
+	if err = srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
+
+	wg.Wait()
+	logger.Log.Info("server was gracefully shutdown.")
 	return nil
 }
 
