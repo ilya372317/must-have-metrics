@@ -2,7 +2,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
@@ -32,10 +36,17 @@ func main() {
 	if err != nil {
 		logger.Log.Panicf("failed get config: %v", err)
 	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
 	monitor := statistic.New(cnfg.RateLimit)
-	defer monitor.Shutdown()
-	go monitor.CollectStat(time.Duration(cnfg.PollInterval) * time.Second)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go monitor.CollectStat(ctx, wg, time.Duration(cnfg.PollInterval)*time.Second)
+	wg.Add(1)
 	go monitor.ReportStat(
+		ctx,
+		wg,
 		cnfg,
 		time.Duration(cnfg.ReportInterval)*time.Second,
 		sender.SendReport,
@@ -45,5 +56,5 @@ func main() {
 		"Build date: ", buildDate, "\n",
 		"Build commit: ", buildCommit,
 	)
-	select {}
+	wg.Wait()
 }

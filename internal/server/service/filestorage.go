@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
@@ -23,14 +24,15 @@ type filesystemSupportStorage interface {
 // SaveDataToFilesystemByInterval by configured interval saving data from storage to filesystem.
 func SaveDataToFilesystemByInterval(
 	ctx context.Context,
+	wg *sync.WaitGroup,
 	serverConfig *config.ServerConfig, repository filesystemSupportStorage) {
+	defer wg.Done()
 	ticker := time.NewTicker(time.Duration(serverConfig.StoreInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Log.Info("SaveDataToFilesystemByInterval was cancelled")
 			return
 		case <-ticker.C:
 			err := StoreToFilesystem(ctx, repository, serverConfig.FilePath)
@@ -44,32 +46,27 @@ func SaveDataToFilesystemByInterval(
 
 // FillFromFilesystem truncate storage and save data from filesystem to storage.
 func FillFromFilesystem(ctx context.Context, storage filesystemSupportStorage, filePath string) error {
-	select {
-	case <-ctx.Done():
-		return nil
-	default:
-		records, err := storage.AllWithKeys(ctx)
-		if err != nil {
-			return fmt.Errorf("failed get all records with keys: %w", err)
-		}
-		if filePath == "" {
-			return errors.New("no need to save data in filesystem")
-		}
-		data, err := os.ReadFile(filePath)
-		if err != nil {
-			return fmt.Errorf("failed fill storage from file system: %w", err)
-		}
-
-		if err = json.Unmarshal(data, &records); err != nil {
-			return fmt.Errorf("metrics in file is invalid: %w", err)
-		}
-
-		if err = storage.Fill(ctx, records); err != nil {
-			return fmt.Errorf("failed fill items: %w", err)
-		}
-
-		return nil
+	records, err := storage.AllWithKeys(ctx)
+	if err != nil {
+		return fmt.Errorf("failed get all records with keys: %w", err)
 	}
+	if filePath == "" {
+		return errors.New("no need to save data in filesystem")
+	}
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed fill storage from file system: %w", err)
+	}
+
+	if err = json.Unmarshal(data, &records); err != nil {
+		return fmt.Errorf("metrics in file is invalid: %w", err)
+	}
+
+	if err = storage.Fill(ctx, records); err != nil {
+		return fmt.Errorf("failed fill items: %w", err)
+	}
+
+	return nil
 }
 
 // StoreToFilesystem get all records from storage and save them to filesystem.

@@ -2,7 +2,7 @@ package sender
 
 import (
 	"github.com/go-resty/resty/v2"
-	cmiddleware2 "github.com/ilya372317/must-have-metrics/internal/cmiddleware"
+	"github.com/ilya372317/must-have-metrics/internal/cmiddleware"
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 )
@@ -17,9 +17,12 @@ func SendReport(agentConfig *config.AgentConfig, requestURL, body string) {
 	c := resty.New()
 
 	if agentConfig.ShouldSignData() {
-		c.OnBeforeRequest(cmiddleware2.WithSignature(agentConfig.SecretKey))
+		c.OnBeforeRequest(cmiddleware.WithSignature(agentConfig.SecretKey))
 	}
-	c.OnBeforeRequest(cmiddleware2.WithCompress())
+	c.OnBeforeRequest(cmiddleware.WithCompress())
+	if agentConfig.ShouldCipherData() {
+		c.OnBeforeRequest(cmiddleware.WithRSACrypt(agentConfig.CryptoKey))
+	}
 
 	_, err := c.R().SetBody(body).
 		Post(requestURL)
