@@ -33,6 +33,9 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 	if serverConfig.ShouldDecryptData() {
 		router.Use(middleware.WithRSADecrypt(serverConfig.CryptoKey))
 	}
+	if serverConfig.ShouldCheckIP() {
+		router.Use(middleware.WithTrustedSubnet(serverConfig))
+	}
 	router.Use(middleware.Compressed())
 	router.Get("/", handlers.IndexHandler(repository))
 	router.Get("/ping", handlers.PingHandler(repository))
