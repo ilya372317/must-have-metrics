@@ -34,3 +34,5 @@ machinet.conf
 
 # MAC OS files
 .DS_Store
+/tags
+
