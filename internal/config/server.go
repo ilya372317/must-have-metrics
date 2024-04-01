@@ -18,6 +18,7 @@ const (
 	defaultServerSecretKeyValue     = ""
 	defaultServerCryptoKeyValue     = ""
 	defaultServerConfigPathValue    = ""
+	defaultTrustedSubnet            = ""
 )
 
 // ServerConfig server configs.
@@ -30,6 +31,7 @@ type ServerConfig struct {
 	CryptoKey     string `env:"CRYPTO_KEY" json:"crypto_key,omitempty"`
 	StoreInterval uint   `env:"STORE_INTERVAL" json:"store_interval,omitempty"`
 	Restore       bool   `env:"RESTORE" json:"restore,omitempty"`
+	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 // NewServer constructor for ServerConfig.
@@ -55,14 +57,15 @@ func (c *ServerConfig) parseFlags() {
 		&c.FilePath, "f",
 		defaultServerFilePathValue, "file path where metrics will be stored",
 	)
-	flag.BoolVar(&c.Restore, "r", defaultServerRestoreValue, "Restore data from file in start server or not")
+	flag.BoolVar(&c.Restore, "r", defaultServerRestoreValue, "restore data from file in start server or not")
 	flag.UintVar(&c.StoreInterval, "i", defaultServerStoreIntervalValue,
 		"interval saving metrics in file",
 	)
-	flag.StringVar(&c.DatabaseDSN, "d", defaultServerDatabaseDSNValue, "Database DSN string")
-	flag.StringVar(&c.SecretKey, "k", defaultServerSecretKeyValue, "Secret key for sign")
+	flag.StringVar(&c.DatabaseDSN, "d", defaultServerDatabaseDSNValue, "database DSN string")
+	flag.StringVar(&c.SecretKey, "k", defaultServerSecretKeyValue, "secret key for sign")
 	flag.StringVar(&c.CryptoKey, "crypto-key", defaultServerCryptoKeyValue, "Private crypto key for RSA decryption")
 	flag.StringVar(&c.ConfigPath, "c", defaultServerConfigPathValue, "file path to json configuration file")
+	flag.StringVar(&c.TrustedSubnet, "t", defaultTrustedSubnet, "subnet from where server can get requests")
 	flag.Parse()
 }
 
@@ -110,6 +113,10 @@ func (c *ServerConfig) parseFromFile() error {
 		c.SecretKey = tempConfig.SecretKey
 	}
 
+	if c.TrustedSubnet == defaultTrustedSubnet {
+		c.TrustedSubnet = tempConfig.TrustedSubnet
+	}
+
 	return nil
 }
 
@@ -134,4 +141,8 @@ func (c *ServerConfig) ShouldDecryptData() bool {
 	}
 
 	return true
+}
+
+func (c *ServerConfig) ShouldCheckIP() bool {
+	return c.TrustedSubnet != ""
 }
