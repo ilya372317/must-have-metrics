@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/config"
@@ -24,9 +23,7 @@ type filesystemSupportStorage interface {
 // SaveDataToFilesystemByInterval by configured interval saving data from storage to filesystem.
 func SaveDataToFilesystemByInterval(
 	ctx context.Context,
-	wg *sync.WaitGroup,
 	serverConfig *config.ServerConfig, repository filesystemSupportStorage) {
-	defer wg.Done()
 	ticker := time.NewTicker(time.Duration(serverConfig.StoreInterval) * time.Second)
 	defer ticker.Stop()
 

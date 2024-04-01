@@ -20,9 +20,9 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/pgx"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/ilya372317/must-have-metrics/internal/config"
+	http2 "github.com/ilya372317/must-have-metrics/internal/handlers/http"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
-	"github.com/ilya372317/must-have-metrics/internal/router"
-	"github.com/ilya372317/must-have-metrics/internal/server/service"
+	"github.com/ilya372317/must-have-metrics/internal/service"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/ilya372317/must-have-metrics/internal/utils"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -48,7 +48,7 @@ func main() {
 }
 
 func run() error {
-	var repository router.AlertStorage = storage.NewInMemoryStorage()
+	var repository http2.AlertStorage = storage.NewInMemoryStorage()
 	if err := godotenv.Load(utils.Root + "/.env-server"); err != nil {
 		logger.Log.Warnf("failed load .env-server file: %v", err)
 	}
@@ -78,7 +78,10 @@ func run() error {
 
 	if cnfg.StoreInterval > 0 {
 		wg.Add(1)
-		go service.SaveDataToFilesystemByInterval(ctx, wg, cnfg, repository)
+		go func() {
+			defer wg.Done()
+			service.SaveDataToFilesystemByInterval(ctx, cnfg, repository)
+		}()
 	}
 	if cnfg.Restore {
 		if err = service.FillFromFilesystem(ctx, repository, cnfg.FilePath); err != nil {
@@ -92,9 +95,10 @@ func run() error {
 		"Build commit: ", buildCommit,
 	)
 	logger.Log.Infof("server is starting...")
+	rt := http2.NewMetricsRouter(cnfg, service.NewMetricsService(repository, cnfg))
 	srv := http.Server{
 		Addr:    cnfg.Host,
-		Handler: router.AlertRouter(service.NewMetricsService(repository, cnfg), cnfg),
+		Handler: rt.BuildRouter(),
 	}
 	wg.Add(1)
 	go func() {

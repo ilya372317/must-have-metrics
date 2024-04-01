@@ -1,4 +1,4 @@
-package router
+package http
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
-	"github.com/ilya372317/must-have-metrics/internal/server/service"
+	"github.com/ilya372317/must-have-metrics/internal/service"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/ilya372317/must-have-metrics/internal/utils/compress"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +32,7 @@ func TestAlertRouter(t *testing.T) {
 	require.NoError(t, err)
 	strg := storage.NewInMemoryStorage()
 	serv := service.NewMetricsService(strg, cnfg)
-	ts := httptest.NewServer(AlertRouter(serv, cnfg))
+	ts := httptest.NewServer(NewMetricsRouter(cnfg, serv).BuildRouter())
 	defer ts.Close()
 
 	type testAlert struct {

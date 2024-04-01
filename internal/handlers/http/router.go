@@ -1,4 +1,4 @@
-package router
+package http
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
-	http2 "github.com/ilya372317/must-have-metrics/internal/handlers/http"
+	"github.com/ilya372317/must-have-metrics/internal/handlers/http/v1"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
 )
@@ -35,35 +35,47 @@ type MetricsService interface {
 	Get(ctx context.Context, name string) (entity.Alert, error)
 }
 
-// AlertRouter return configured router.
-func AlertRouter(service MetricsService, serverConfig *config.ServerConfig) *chi.Mux {
+type MetricsRouter struct {
+	cnfg    *config.ServerConfig
+	service MetricsService
+}
+
+func NewMetricsRouter(cnfg *config.ServerConfig, service MetricsService) *MetricsRouter {
+	return &MetricsRouter{
+		cnfg:    cnfg,
+		service: service,
+	}
+}
+
+// BuildRouter return configured router.
+func (rt *MetricsRouter) BuildRouter() *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.WithLogging())
-	if serverConfig.ShouldDecryptData() {
-		router.Use(middleware.WithRSADecrypt(serverConfig.CryptoKey))
+	if rt.cnfg.ShouldDecryptData() {
+		router.Use(middleware.WithRSADecrypt(rt.cnfg.CryptoKey))
 	}
-	if serverConfig.ShouldCheckIP() {
-		router.Use(middleware.WithTrustedSubnet(serverConfig))
+	if rt.cnfg.ShouldCheckIP() {
+		router.Use(middleware.WithTrustedSubnet(rt.cnfg))
 	}
 	router.Use(middleware.Compressed())
-	router.Get("/", http2.IndexHandler(service))
-	router.Get("/ping", http2.PingHandler(service))
-	router.Handle("/public/*", http.StripPrefix("/public", http2.StaticHandler()))
+	router.Get("/", v1.IndexHandler(rt.service))
+	router.Get("/ping", v1.PingHandler(rt.service))
+	router.Handle("/public/*", http.StripPrefix("/public", v1.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
-		r.Post("/", http2.UpdateJSONHandler(service))
+		r.Post("/", v1.UpdateJSONHandler(rt.service))
 	})
 	router.Route("/updates", func(r chi.Router) {
-		r.Use(middleware.WithSign(serverConfig))
-		r.Post("/", http2.BulkUpdate(service))
+		r.Use(middleware.WithSign(rt.cnfg))
+		r.Post("/", v1.BulkUpdate(rt.service))
 	})
 	router.Route("/value", func(r chi.Router) {
-		r.Post("/", http2.ShowJSONHandler(service))
+		r.Post("/", v1.ShowJSONHandler(rt.service))
 	})
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
-		r.Post("/", http2.UpdateHandler(service))
+		r.Post("/", v1.UpdateHandler(rt.service))
 	})
 	router.Route("/value/{type}/{name}", func(r chi.Router) {
-		r.Get("/", http2.ShowHandler(service))
+		r.Get("/", v1.ShowHandler(rt.service))
 	})
 	router.HandleFunc("/debug/pprof/*", pprof.Index)
 	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
