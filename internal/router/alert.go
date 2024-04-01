@@ -7,7 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/config"
-	"github.com/ilya372317/must-have-metrics/internal/handlers"
+	"github.com/ilya372317/must-have-metrics/internal/dto"
+	http2 "github.com/ilya372317/must-have-metrics/internal/handlers/http"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/server/middleware"
 )
@@ -26,8 +27,16 @@ type AlertStorage interface {
 	Ping() error
 }
 
+type MetricsService interface {
+	AddAlert(context.Context, dto.Metrics) (entity.Alert, error)
+	BulkAddAlerts(context.Context, []dto.Metrics) ([]entity.Alert, error)
+	Ping() error
+	GetAll(context.Context) ([]entity.Alert, error)
+	Get(ctx context.Context, name string) (entity.Alert, error)
+}
+
 // AlertRouter return configured router.
-func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *chi.Mux {
+func AlertRouter(service MetricsService, serverConfig *config.ServerConfig) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.WithLogging())
 	if serverConfig.ShouldDecryptData() {
@@ -37,24 +46,24 @@ func AlertRouter(repository AlertStorage, serverConfig *config.ServerConfig) *ch
 		router.Use(middleware.WithTrustedSubnet(serverConfig))
 	}
 	router.Use(middleware.Compressed())
-	router.Get("/", handlers.IndexHandler(repository))
-	router.Get("/ping", handlers.PingHandler(repository))
-	router.Handle("/public/*", http.StripPrefix("/public", handlers.StaticHandler()))
+	router.Get("/", http2.IndexHandler(service))
+	router.Get("/ping", http2.PingHandler(service))
+	router.Handle("/public/*", http.StripPrefix("/public", http2.StaticHandler()))
 	router.Route("/update", func(r chi.Router) {
-		r.Post("/", handlers.UpdateJSONHandler(repository, serverConfig))
+		r.Post("/", http2.UpdateJSONHandler(service))
 	})
 	router.Route("/updates", func(r chi.Router) {
 		r.Use(middleware.WithSign(serverConfig))
-		r.Post("/", handlers.BulkUpdate(repository))
+		r.Post("/", http2.BulkUpdate(service))
 	})
 	router.Route("/value", func(r chi.Router) {
-		r.Post("/", handlers.ShowJSONHandler(repository))
+		r.Post("/", http2.ShowJSONHandler(service))
 	})
 	router.Route("/update/{type}/{name}/{value}", func(r chi.Router) {
-		r.Post("/", handlers.UpdateHandler(repository, serverConfig))
+		r.Post("/", http2.UpdateHandler(service))
 	})
 	router.Route("/value/{type}/{name}", func(r chi.Router) {
-		r.Get("/", handlers.ShowHandler(repository))
+		r.Get("/", http2.ShowHandler(service))
 	})
 	router.HandleFunc("/debug/pprof/*", pprof.Index)
 	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)

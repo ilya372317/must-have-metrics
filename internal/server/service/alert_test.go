@@ -133,7 +133,9 @@ func Test_addAlert(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			_, err := AddAlert(context.Background(), tt.args.repo, tt.args.dto, serverConfig)
+			serv := NewMetricsService(tt.args.repo, serverConfig)
+
+			_, err := serv.AddAlert(context.Background(), tt.args.dto)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -210,7 +212,9 @@ func Test_updateCounterAlert(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			_, err := updateCounterAlert(context.Background(), tt.args.dto, tt.args.repo)
+			serv := NewMetricsService(tt.args.repo, serverConfig)
+
+			_, err := serv.updateCounterAlert(context.Background(), tt.args.dto)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -272,7 +276,8 @@ func Test_updateGaugeAlert(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := updateGaugeAlert(context.Background(), tt.args.dto, tt.args.repository)
+			serv := NewMetricsService(tt.args.repository, serverConfig)
+			_, err := serv.updateGaugeAlert(context.Background(), tt.args.dto)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -411,9 +416,10 @@ func BenchmarkBulkAddAlerts(b *testing.B) {
 		})
 	}
 	ctx := context.Background()
+	serv := NewMetricsService(storage.NewInMemoryStorage(), serverConfig)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = BulkAddAlerts(ctx, storage.NewInMemoryStorage(), mList)
+		_, _ = serv.BulkAddAlerts(ctx, mList)
 	}
 }
 
@@ -429,10 +435,11 @@ func BenchmarkAddAlert(b *testing.B) {
 	cnfg := &config.ServerConfig{
 		FilePath: "/tmp/metrics.json",
 	}
+	serv := NewMetricsService(storage.NewInMemoryStorage(), cnfg)
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = AddAlert(ctx, storage.NewInMemoryStorage(), metrics, cnfg)
+		_, _ = serv.AddAlert(ctx, metrics)
 	}
 }
 
@@ -484,10 +491,11 @@ func TestBulkAddAlerts(t *testing.T) {
 		},
 	}
 	strg := storage.NewInMemoryStorage()
+	serv := NewMetricsService(strg, serverConfig)
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := BulkAddAlerts(ctx, strg, tt.metrics)
+			got, err := serv.BulkAddAlerts(ctx, tt.metrics)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})

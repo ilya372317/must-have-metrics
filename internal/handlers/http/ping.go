@@ -1,4 +1,4 @@
-package handlers
+package http
 
 import (
 	"fmt"
@@ -8,14 +8,14 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type pingStorage interface {
+type pingService interface {
 	Ping() error
 }
 
 // PingHandler allow to check connection with storage.
-func PingHandler(repository pingStorage) http.HandlerFunc {
+func PingHandler(service pingService) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		if pingErr := repository.Ping(); pingErr != nil {
+		if pingErr := service.Ping(); pingErr != nil {
 			http.Error(
 				writer,
 				fmt.Sprintf("Failed ping connection to database: %s", pingErr.Error()),

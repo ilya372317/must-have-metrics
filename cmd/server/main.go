@@ -94,7 +94,7 @@ func run() error {
 	logger.Log.Infof("server is starting...")
 	srv := http.Server{
 		Addr:    cnfg.Host,
-		Handler: router.AlertRouter(repository, cnfg),
+		Handler: router.AlertRouter(service.NewMetricsService(repository, cnfg), cnfg),
 	}
 	wg.Add(1)
 	go func() {

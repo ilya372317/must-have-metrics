@@ -1,4 +1,4 @@
-package handlers
+package http
 
 import (
 	"context"
@@ -10,18 +10,18 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 )
 
-type showStorage interface {
+type showService interface {
 	Get(ctx context.Context, name string) (entity.Alert, error)
 }
 
 // ShowHandler allow to view value of specific metric.
-func ShowHandler(strg showStorage) http.HandlerFunc {
+func ShowHandler(service showService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		showDTO := dto.CreateShowAlertDTOFromRequest(r)
 		if _, err := showDTO.Validate(); err != nil {
 			http.Error(w, fmt.Errorf("show parameters is invalid: %w", err).Error(), http.StatusBadRequest)
 		}
-		alert, err := strg.Get(r.Context(), showDTO.Name)
+		alert, err := service.Get(r.Context(), showDTO.Name)
 		if err != nil {
 			http.Error(w, "alert not found", http.StatusNotFound)
 			return

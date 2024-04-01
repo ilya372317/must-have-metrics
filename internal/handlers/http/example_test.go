@@ -1,4 +1,4 @@
-package handlers
+package http
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
+	"github.com/ilya372317/must-have-metrics/internal/server/service"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 )
 
@@ -33,7 +34,8 @@ func TestMain(m *testing.M) {
 func ExampleIndexHandler() {
 	r := httptest.NewRequest(http.MethodGet, "/index", nil)
 	w := httptest.NewRecorder()
-	indexHandler := IndexHandler(memStrg)
+	serv := service.NewMetricsService(memStrg, serverConfig)
+	indexHandler := IndexHandler(serv)
 
 	indexHandler.ServeHTTP(w, r)
 
@@ -142,8 +144,10 @@ func ExampleUpdateHandler() {
 	r := httptest.NewRequest(http.MethodPost, "/update", nil)
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, chiContext))
 	w := httptest.NewRecorder()
+	cnfg := &config.ServerConfig{FilePath: "/tmp/metrics.json"}
+	serv := service.NewMetricsService(memStrg, cnfg)
 
-	updateHandler := UpdateHandler(memStrg, &config.ServerConfig{FilePath: "/tmp/metrics.json"})
+	updateHandler := UpdateHandler(serv)
 	updateHandler.ServeHTTP(w, r)
 
 	res := w.Result()
@@ -168,7 +172,9 @@ func ExampleUpdateJSONHandler() {
 	)
 	w := httptest.NewRecorder()
 
-	updateJSONHandler := UpdateJSONHandler(memStrg, &config.ServerConfig{FilePath: "/tmp/metrics.json"})
+	cnfg := &config.ServerConfig{FilePath: "/tmp/metrics.json"}
+	serv := service.NewMetricsService(memStrg, cnfg)
+	updateJSONHandler := UpdateJSONHandler(serv)
 	updateJSONHandler.ServeHTTP(w, r)
 
 	res := w.Result()
@@ -193,7 +199,8 @@ func ExampleBulkUpdate() {
 	)
 	w := httptest.NewRecorder()
 
-	handler := BulkUpdate(memStrg)
+	serv := service.NewMetricsService(memStrg, serverConfig)
+	handler := BulkUpdate(serv)
 	handler.ServeHTTP(w, r)
 
 	res := w.Result()
