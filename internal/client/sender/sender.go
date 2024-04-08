@@ -13,6 +13,7 @@ import (
 	pb "github.com/ilya372317/must-have-metrics/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding/gzip"
 )
 
 const failedSaveDataErrPattern = "failed to save data on server: %v\n"
@@ -87,7 +88,7 @@ func GRPCSendReport(agentConfig *config.AgentConfig, data []ReportData) {
 	}
 	in.Metrics = inMetrics
 
-	if _, err = client.BulkUpdate(ctx, in); err != nil {
+	if _, err = client.BulkUpdate(ctx, in, grpc.UseCompressor(gzip.Name)); err != nil {
 		logger.Log.Errorf("failed save data on server by GRPC: %v", err)
 	}
 }
