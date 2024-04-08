@@ -2,15 +2,12 @@ package statistic
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"runtime"
 	"sync"
 	"time"
 
 	"github.com/ilya372317/must-have-metrics/internal/client/sender"
 	"github.com/ilya372317/must-have-metrics/internal/config"
-	"github.com/ilya372317/must-have-metrics/internal/dto"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	"github.com/ilya372317/must-have-metrics/internal/utils"
@@ -188,9 +185,16 @@ func (monitor *Monitor) reportStat(agentConfig *config.AgentConfig,
 	reportSender sender.ReportSender,
 	data []MonitorValue,
 ) {
-	requestURL := createURLForReportStat(agentConfig.Host)
-	body := createBody(data)
-	reportSender(agentConfig, requestURL, body)
+	reportData := make([]sender.ReportData, 0, len(data))
+	for _, d := range data {
+		reportData = append(reportData, sender.ReportData{
+			Name:  d.Name,
+			Type:  d.Type,
+			Value: d.Value,
+			Delta: d.Delta,
+		})
+	}
+	reportSender(agentConfig, reportData)
 	monitor.resetPollCount()
 }
 
@@ -224,32 +228,6 @@ func (monitor *Monitor) resetPollCount() {
 		Type:  entity.TypeCounter,
 		Delta: nullValue,
 	}
-}
-
-func createBody(data []MonitorValue) string {
-	metricsList := make([]dto.Metrics, 0, len(data))
-	for _, monitorValue := range data {
-		m := dto.Metrics{
-			ID:    monitorValue.Name,
-			MType: monitorValue.Type,
-		}
-		if monitorValue.Type == entity.TypeCounter {
-			int64Value := int64(monitorValue.Delta)
-			m.Delta = &int64Value
-		}
-		if monitorValue.Type == entity.TypeGauge {
-			float64Value := float64(monitorValue.Value)
-			m.Value = &float64Value
-		}
-		metricsList = append(metricsList, m)
-	}
-
-	body, _ := json.Marshal(&metricsList)
-	return string(body)
-}
-
-func createURLForReportStat(host string) string {
-	return fmt.Sprintf("http://" + host + "/updates")
 }
 
 func chunkMonitorValueSlice(slice []MonitorValue, chunkSize int) [][]MonitorValue {
