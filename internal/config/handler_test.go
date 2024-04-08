@@ -25,6 +25,7 @@ func TestNewServer(t *testing.T) {
 				SecretKey:     "",
 				StoreInterval: 300,
 				Restore:       true,
+				GRPCHost:      ":8081",
 			},
 			wantErr: false,
 		},

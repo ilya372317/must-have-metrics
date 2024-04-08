@@ -19,6 +19,7 @@ const (
 	defaultServerCryptoKeyValue     = ""
 	defaultServerConfigPathValue    = ""
 	defaultTrustedSubnet            = ""
+	defaultGRPCHostValue            = ":8081"
 )
 
 // ServerConfig server configs.
@@ -29,9 +30,10 @@ type ServerConfig struct {
 	ConfigPath    string `env:"CONFIG"`
 	SecretKey     string `env:"KEY" json:"secret_key,omitempty"`
 	CryptoKey     string `env:"CRYPTO_KEY" json:"crypto_key,omitempty"`
+	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
+	GRPCHost      string `env:"GRPC_ADDRESS" json:"grpc_address"`
 	StoreInterval uint   `env:"STORE_INTERVAL" json:"store_interval,omitempty"`
 	Restore       bool   `env:"RESTORE" json:"restore,omitempty"`
-	TrustedSubnet string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 }
 
 // NewServer constructor for ServerConfig.
@@ -40,7 +42,7 @@ func NewServer() (*ServerConfig, error) {
 	cnfg.parseFlags()
 	err := env.Parse(cnfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed parse enviroment virables: %w", err)
+		return nil, fmt.Errorf("failed parse environment virables: %w", err)
 	}
 	if err = cnfg.parseFromFile(); err != nil {
 		return nil, fmt.Errorf("failed create config from file: %w", err)
@@ -66,6 +68,7 @@ func (c *ServerConfig) parseFlags() {
 	flag.StringVar(&c.CryptoKey, "crypto-key", defaultServerCryptoKeyValue, "Private crypto key for RSA decryption")
 	flag.StringVar(&c.ConfigPath, "c", defaultServerConfigPathValue, "file path to json configuration file")
 	flag.StringVar(&c.TrustedSubnet, "t", defaultTrustedSubnet, "subnet from where server can get requests")
+	flag.StringVar(&c.GRPCHost, "grpc-host", defaultGRPCHostValue, "address where grpc will listen request")
 	flag.Parse()
 }
 
@@ -115,6 +118,10 @@ func (c *ServerConfig) parseFromFile() error {
 
 	if c.TrustedSubnet == defaultTrustedSubnet {
 		c.TrustedSubnet = tempConfig.TrustedSubnet
+	}
+
+	if c.GRPCHost == defaultGRPCHostValue || c.GRPCHost == nullStringValue {
+		c.GRPCHost = tempConfig.GRPCHost
 	}
 
 	return nil
