@@ -20,6 +20,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/pgx"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	mygrpc "github.com/ilya372317/must-have-metrics/internal/handlers/grpc"
 	http2 "github.com/ilya372317/must-have-metrics/internal/handlers/http"
@@ -125,7 +126,9 @@ func run() error {
 		}
 	}()
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		logging.UnaryServerInterceptor(logger.InterceptorLogger()),
+	))
 
 	wg.Add(1)
 	go func() {
