@@ -20,12 +20,12 @@ func TestWithTrustedSubnet(t *testing.T) {
 	require.NoError(t, err)
 	type requestData struct {
 		subnet      string
-		hasMetadata bool
 		realIP      string
+		hasMetadata bool
 	}
 	tests := []struct {
-		request  requestData
 		name     string
+		request  requestData
 		wantCode codes.Code
 		wantErr  bool
 	}{
