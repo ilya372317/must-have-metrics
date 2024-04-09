@@ -2,11 +2,12 @@ package agent
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ilya372317/must-have-metrics/pgk/externalip"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 func WithRealIP() grpc.UnaryClientInterceptor {
@@ -20,7 +21,7 @@ func WithRealIP() grpc.UnaryClientInterceptor {
 	) error {
 		ipStr, err := externalip.Get()
 		if err != nil {
-			return fmt.Errorf("failed resolve ip address: %w", err)
+			return status.Errorf(codes.Internal, "failed resolve ip address: %v", err)
 		}
 
 		var md metadata.MD
