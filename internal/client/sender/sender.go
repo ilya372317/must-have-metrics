@@ -8,6 +8,7 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/cmiddleware"
 	"github.com/ilya372317/must-have-metrics/internal/config"
 	"github.com/ilya372317/must-have-metrics/internal/dto"
+	ainterceptor "github.com/ilya372317/must-have-metrics/internal/interceptor/agent"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
 	pb "github.com/ilya372317/must-have-metrics/proto"
@@ -57,7 +58,10 @@ func HTTPSendReport(agentConfig *config.AgentConfig, data []ReportData) {
 func GRPCSendReport(agentConfig *config.AgentConfig, data []ReportData) {
 	ctx := context.Background()
 	connect, err := grpc.DialContext(ctx,
-		agentConfig.GRPCHost, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		agentConfig.GRPCHost,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(ainterceptor.WithRealIP()),
+	)
 	if err != nil {
 		logger.Log.Errorf("failed save data on server by grpc: %v", err)
 		return

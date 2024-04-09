@@ -18,6 +18,9 @@ func WithTrustedSubnet(serverConfig *config.ServerConfig) grpc.UnaryServerInterc
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp any, err error) {
+		if !serverConfig.ShouldCheckIP() {
+			return handler(ctx, req)
+		}
 		var realIP string
 		md, ok := metadata.FromIncomingContext(ctx)
 		if ok {

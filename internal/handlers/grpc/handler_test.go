@@ -241,16 +241,16 @@ func TestServer_Show(t *testing.T) {
 		Type string
 	}
 	type want struct {
+		Value *float64
+		Delta *int64
 		ID    string
 		Type  string
-		Delta *int64
-		Value *float64
 	}
 	tests := []struct {
-		data    []entity.Alert
+		want    want
 		name    string
 		arg     argument
-		want    want
+		data    []entity.Alert
 		errCode codes.Code
 		wantErr bool
 	}{
@@ -397,22 +397,22 @@ func TestServer_Show(t *testing.T) {
 
 func TestServer_Update(t *testing.T) {
 	type want struct {
-		ID    string
-		Type  string
 		Delta *int64
 		Value *float64
+		ID    string
+		Type  string
 	}
 	type argument struct {
-		ID    string
-		Type  string
 		Delta *int64
 		Value *float64
+		ID    string
+		Type  string
 	}
 	tests := []struct {
-		name     string
-		data     []entity.Alert
 		arg      argument
 		want     want
+		name     string
+		data     []entity.Alert
 		wantCode codes.Code
 		wantErr  bool
 	}{
