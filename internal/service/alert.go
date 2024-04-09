@@ -16,48 +16,68 @@ const (
 	failedBulkAddAlertsErrPattern = "failed bulk insert alerts: %w"
 )
 
-type updateStorage interface {
+type MetricsStorage interface {
 	Save(ctx context.Context, name string, alert entity.Alert) error
 	Update(ctx context.Context, name string, alert entity.Alert) error
 	Get(ctx context.Context, name string) (entity.Alert, error)
 	Has(ctx context.Context, name string) (bool, error)
+	All(ctx context.Context) ([]entity.Alert, error)
 	AllWithKeys(ctx context.Context) (map[string]entity.Alert, error)
 	Fill(context.Context, map[string]entity.Alert) error
-}
-
-type bulkUpdateStorage interface {
 	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
 	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
-	Get(ctx context.Context, name string) (entity.Alert, error)
-	Has(ctx context.Context, name string) (bool, error)
-	Save(ctx context.Context, name string, alert entity.Alert) error
-	Update(ctx context.Context, name string, alert entity.Alert) error
+	Ping() error
 }
 
-type updateCounterStorage interface {
-	Get(ctx context.Context, name string) (entity.Alert, error)
-	Has(ctx context.Context, name string) (bool, error)
-	Save(ctx context.Context, name string, alert entity.Alert) error
-	Update(ctx context.Context, name string, alert entity.Alert) error
+type MetricsService struct {
+	storage MetricsStorage
+	cnfg    *config.ServerConfig
+}
+
+func NewMetricsService(storage MetricsStorage, cnfg *config.ServerConfig) *MetricsService {
+	return &MetricsService{storage: storage, cnfg: cnfg}
+}
+
+func (s *MetricsService) Get(ctx context.Context, id string) (entity.Alert, error) {
+	alert, err := s.storage.Get(ctx, id)
+	if err != nil {
+		return entity.Alert{}, fmt.Errorf("failed get metrics with id: %s, %w", id, err)
+	}
+
+	return alert, nil
+}
+
+func (s *MetricsService) GetAll(ctx context.Context) ([]entity.Alert, error) {
+	result, err := s.storage.All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed get all metrics: %w", err)
+	}
+	return result, nil
+}
+
+func (s *MetricsService) Ping() error {
+	err := s.storage.Ping()
+	if err != nil {
+		return fmt.Errorf("failed ping storage: %w", err)
+	}
+	return nil
 }
 
 // AddAlert save or update alert into storage.
-func AddAlert(
+func (s *MetricsService) AddAlert(
 	ctx context.Context,
-	repo updateStorage,
 	dto dto.Metrics,
-	serverConfig *config.ServerConfig,
 ) (entity.Alert, error) {
 	var alert entity.Alert
 	var err error
 	switch dto.MType {
 	case entity.TypeGauge:
-		alert, err = updateGaugeAlert(ctx, dto, repo)
+		alert, err = s.updateGaugeAlert(ctx, dto)
 		if err != nil {
 			return entity.Alert{}, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 		}
 	case entity.TypeCounter:
-		alert, err = updateCounterAlert(ctx, dto, repo)
+		alert, err = s.updateCounterAlert(ctx, dto)
 		if err != nil {
 			return entity.Alert{}, fmt.Errorf(failedUpdateCounterPattern, err)
 		}
@@ -65,8 +85,8 @@ func AddAlert(
 		return entity.Alert{}, errors.New("invalid type of metric")
 	}
 
-	if serverConfig.StoreInterval == 0 {
-		if err = StoreToFilesystem(ctx, repo, serverConfig.FilePath); err != nil {
+	if s.cnfg.StoreInterval == 0 {
+		if err = StoreToFilesystem(ctx, s.storage, s.cnfg.FilePath); err != nil {
 			return entity.Alert{}, fmt.Errorf("failed save data to filesystem: %w", err)
 		}
 	}
@@ -74,27 +94,27 @@ func AddAlert(
 	return alert, nil
 }
 
-func updateGaugeAlert(ctx context.Context, dto dto.Metrics, repository updateStorage) (entity.Alert, error) {
+func (s *MetricsService) updateGaugeAlert(ctx context.Context, dto dto.Metrics) (entity.Alert, error) {
 	if dto.Value == nil {
 		return entity.Alert{}, errors.New("failed update gauge alert, missing value field")
 	}
 
 	alert := entity.MakeGaugeAlert(dto.ID, *dto.Value)
-	alertExist, err := repository.Has(ctx, dto.ID)
+	alertExist, err := s.storage.Has(ctx, dto.ID)
 	if err != nil {
 		return entity.Alert{}, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 	}
 	if alertExist {
-		if err = repository.Update(ctx, dto.ID, alert); err != nil {
+		if err = s.storage.Update(ctx, dto.ID, alert); err != nil {
 			return entity.Alert{}, fmt.Errorf(failedUpdateGaugeAlertPattern, err)
 		}
 	} else {
-		if err = repository.Save(ctx, dto.ID, alert); err != nil {
+		if err = s.storage.Save(ctx, dto.ID, alert); err != nil {
 			return entity.Alert{}, fmt.Errorf("failed save alert: %w", err)
 		}
 	}
 
-	newAlert, errAlertNotFound := repository.Get(ctx, dto.ID)
+	newAlert, errAlertNotFound := s.storage.Get(ctx, dto.ID)
 	if errAlertNotFound != nil {
 		return entity.Alert{}, fmt.Errorf(failedUpdateGaugeAlertPattern, errAlertNotFound)
 	}
@@ -102,37 +122,37 @@ func updateGaugeAlert(ctx context.Context, dto dto.Metrics, repository updateSto
 	return newAlert, nil
 }
 
-func updateCounterAlert(ctx context.Context, dto dto.Metrics, repo updateCounterStorage) (entity.Alert, error) {
+func (s *MetricsService) updateCounterAlert(ctx context.Context, dto dto.Metrics) (entity.Alert, error) {
 	if dto.Delta == nil {
 		return entity.Alert{}, errors.New("failed update counter alert, missing delta filed")
 	}
 
 	alert := entity.MakeCounterAlert(dto.ID, *dto.Delta)
-	hasAlert, err := repo.Has(ctx, dto.ID)
+	hasAlert, err := s.storage.Has(ctx, dto.ID)
 	if err != nil {
 		return entity.Alert{}, fmt.Errorf("failed check alert exist: %w", err)
 	}
 	if !hasAlert {
-		if err = repo.Save(ctx, dto.ID, alert); err != nil {
+		if err = s.storage.Save(ctx, dto.ID, alert); err != nil {
 			return entity.Alert{}, fmt.Errorf("failed save gauge alert: %w", err)
 		}
 
-		resultAlert, err := repo.Get(ctx, dto.ID)
+		resultAlert, err := s.storage.Get(ctx, dto.ID)
 		if err != nil {
 			return entity.Alert{}, fmt.Errorf("failed update counter alert: %w", err)
 		}
 		return resultAlert, nil
 	}
-	oldAlert, err := repo.Get(ctx, dto.ID)
+	oldAlert, err := s.storage.Get(ctx, dto.ID)
 	if err != nil {
 		return entity.Alert{}, fmt.Errorf("counter alert for update not found: %w", err)
 	}
 
 	if oldAlert.Type == entity.TypeGauge {
-		if err = repo.Save(ctx, dto.ID, alert); err != nil {
+		if err = s.storage.Save(ctx, dto.ID, alert); err != nil {
 			return entity.Alert{}, fmt.Errorf("failed save gauge alert: %w", err)
 		}
-		newAlert, err := repo.Get(ctx, dto.ID)
+		newAlert, err := s.storage.Get(ctx, dto.ID)
 		if err != nil {
 			return entity.Alert{}, fmt.Errorf(failedUpdateCounterPattern, err)
 		}
@@ -142,10 +162,10 @@ func updateCounterAlert(ctx context.Context, dto dto.Metrics, repo updateCounter
 	newValue := *oldAlert.IntValue + *alert.IntValue
 	alert.IntValue = &newValue
 
-	if err := repo.Update(ctx, dto.ID, alert); err != nil {
+	if err := s.storage.Update(ctx, dto.ID, alert); err != nil {
 		return entity.Alert{}, fmt.Errorf(failedUpdateCounterPattern, err)
 	}
-	newAlert, err := repo.Get(ctx, dto.ID)
+	newAlert, err := s.storage.Get(ctx, dto.ID)
 	if err != nil {
 		return entity.Alert{}, fmt.Errorf(failedUpdateCounterPattern, err)
 	}
@@ -153,21 +173,21 @@ func updateCounterAlert(ctx context.Context, dto dto.Metrics, repo updateCounter
 }
 
 // BulkAddAlerts saving multiply given alerts into storage.
-func BulkAddAlerts(ctx context.Context, storage bulkUpdateStorage, metricsList []dto.Metrics) ([]entity.Alert, error) {
+func (s *MetricsService) BulkAddAlerts(ctx context.Context, metricsList []dto.Metrics) ([]entity.Alert, error) {
 	ids := make([]string, 0, len(metricsList))
 	for _, metrics := range metricsList {
 		ids = append(ids, metrics.ID)
 	}
 
-	if err := bulkAddGaugeAlerts(ctx, storage, metricsList); err != nil {
+	if err := s.bulkAddGaugeAlerts(ctx, metricsList); err != nil {
 		return nil, fmt.Errorf(failedBulkAddAlertsErrPattern, err)
 	}
 
-	if err := bulkAddCounterAlerts(ctx, storage, metricsList); err != nil {
+	if err := s.bulkAddCounterAlerts(ctx, metricsList); err != nil {
 		return nil, fmt.Errorf(failedBulkAddAlertsErrPattern, err)
 	}
 
-	resultAlerts, err := storage.GetByIDs(ctx, ids)
+	resultAlerts, err := s.storage.GetByIDs(ctx, ids)
 	if err != nil {
 		return nil, fmt.Errorf("failed get alerts by ids: %w", err)
 	}
@@ -175,8 +195,7 @@ func BulkAddAlerts(ctx context.Context, storage bulkUpdateStorage, metricsList [
 	return resultAlerts, nil
 }
 
-func bulkAddGaugeAlerts(ctx context.Context,
-	storage bulkUpdateStorage, metricsList dto.MetricsList) error {
+func (s *MetricsService) bulkAddGaugeAlerts(ctx context.Context, metricsList dto.MetricsList) error {
 	alerts := make([]entity.Alert, 0, len(metricsList))
 	gaugeMetrics := make([]dto.Metrics, 0, len(metricsList))
 	for _, metrics := range metricsList {
@@ -188,15 +207,14 @@ func bulkAddGaugeAlerts(ctx context.Context,
 		alerts = append(alerts, metrics.ConvertToAlert())
 	}
 
-	if err := storage.BulkInsertOrUpdate(ctx, alerts); err != nil {
+	if err := s.storage.BulkInsertOrUpdate(ctx, alerts); err != nil {
 		return fmt.Errorf(failedBulkAddAlertsErrPattern, err)
 	}
 
 	return nil
 }
 
-func bulkAddCounterAlerts(ctx context.Context,
-	storage bulkUpdateStorage, metricsList dto.MetricsList) error {
+func (s *MetricsService) bulkAddCounterAlerts(ctx context.Context, metricsList dto.MetricsList) error {
 	counterMetrics := make([]dto.Metrics, 0, len(metricsList))
 	for _, metrics := range metricsList {
 		if metrics.MType == entity.TypeCounter {
@@ -204,7 +222,7 @@ func bulkAddCounterAlerts(ctx context.Context,
 		}
 	}
 	for _, metrics := range counterMetrics {
-		if _, err := updateCounterAlert(ctx, metrics, storage); err != nil {
+		if _, err := s.updateCounterAlert(ctx, metrics); err != nil {
 			return fmt.Errorf(failedBulkAddAlertsErrPattern, err)
 		}
 	}

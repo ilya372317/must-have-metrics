@@ -17,6 +17,7 @@ const (
 	defaultAgentSecretKeyValue      = ""
 	defaultAgentCryptoKeyValue      = ""
 	defaultAgentConfigValue         = ""
+	defaultAgentGRPCHostValue       = ":8081"
 
 	nullStringValue = ""
 	nullIntValue    = 0
@@ -36,6 +37,7 @@ type AgentConfig struct {
 	SecretKey      string `env:"KEY" json:"secret_key,omitempty"`
 	CryptoKey      string `env:"CRYPTO_KEY" json:"crypto_key,omitempty"`
 	ConfigPath     string `env:"CONFIG"`
+	GRPCHost       string `env:"GRPC_ADDRESS" json:"grpc_address,omitempty"`
 	PollInterval   uint   `env:"POLL_INTERVAL" json:"poll_interval,omitempty"`
 	ReportInterval uint   `env:"REPORT_INTERVAL" json:"report_interval,omitempty"`
 	RateLimit      uint   `env:"RATE_LIMIT" json:"rate_limit,omitempty"`
@@ -66,6 +68,7 @@ func (c *AgentConfig) parseFlags() {
 	flag.UintVar(&c.RateLimit, "l", defaultAgentRateLimitValue, "limit of simultaneously requests to server")
 	flag.StringVar(&c.CryptoKey, "crypto-key", defaultAgentCryptoKeyValue, "public crypto key for cipher transferred data")
 	flag.StringVar(&c.ConfigPath, "c", defaultAgentConfigValue, "file path to json configuration file")
+	flag.StringVar(&c.GRPCHost, "grpc-a", defaultAgentGRPCHostValue, "address where agent will send request by grpc")
 	flag.Parse()
 }
 
@@ -110,6 +113,9 @@ func (c *AgentConfig) parseFromFile() error {
 	}
 	if c.RateLimit == defaultAgentRateLimitValue || c.RateLimit == nullIntValue {
 		c.RateLimit = tempConfig.RateLimit
+	}
+	if c.GRPCHost == defaultAgentGRPCHostValue || c.GRPCHost == nullStringValue {
+		c.GRPCHost = tempConfig.GRPCHost
 	}
 
 	return nil

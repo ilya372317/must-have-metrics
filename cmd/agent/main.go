@@ -49,7 +49,7 @@ func main() {
 		wg,
 		cnfg,
 		time.Duration(cnfg.ReportInterval)*time.Second,
-		sender.SendReport,
+		sender.GRPCSendReport,
 	)
 	fmt.Println(
 		"Build version: ", buildVersion, "\n",

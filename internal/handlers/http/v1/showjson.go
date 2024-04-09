@@ -1,4 +1,4 @@
-package handlers
+package v1
 
 import (
 	"context"
@@ -15,12 +15,12 @@ const (
 	jsonContentHeaderValue = "application/json"
 )
 
-type showJSONStorage interface {
+type showJSONService interface {
 	Get(ctx context.Context, name string) (entity.Alert, error)
 }
 
 // ShowJSONHandler allow to view information about specific metric in json format.
-func ShowJSONHandler(storage showJSONStorage) http.HandlerFunc {
+func ShowJSONHandler(serivce showJSONService) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set(contentTypeHeader, jsonContentHeaderValue)
 		metrics, err := dto.NewMetricsDTOFromRequest(request)
@@ -35,7 +35,7 @@ func ShowJSONHandler(storage showJSONStorage) http.HandlerFunc {
 			return
 		}
 
-		alert, err := storage.Get(request.Context(), showDTO.Name)
+		alert, err := serivce.Get(request.Context(), showDTO.Name)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusNotFound)
 			return

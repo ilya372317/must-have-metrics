@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package metrics;
+
+option go_package = "github.com/ilya372317/must-have-metrics/proto";
+
+message Metrics{
+  optional double value = 4;
+  optional int64 delta = 3;
+  string id = 1;
+  string type = 2;
+}
+
+message BulkUpdateMetricsRequest {
+  repeated Metrics metrics = 1;
+}
+
+message BulkUpdateMetricsResponse {
+  repeated Metrics metrics = 1;
+}
+
+message IndexMetricsResponse {
+  repeated Metrics metrics = 1;
+}
+
+message IndexMetricsRequest{}
+
+message ShowMetricsRequest{
+  string id = 1;
+  string type = 2;
+}
+
+message ShowMetricsResponse{
+  Metrics metrics = 1;
+}
+
+message UpdateMetricsRequest{
+  Metrics metrics = 1;
+}
+
+message UpdateMetricsResponse{
+  Metrics metrics = 1;
+}
+
+service MetricsService {
+  rpc BulkUpdate(BulkUpdateMetricsRequest) returns (BulkUpdateMetricsResponse);
+  rpc Index(IndexMetricsRequest) returns (IndexMetricsResponse);
+  rpc Show(ShowMetricsRequest) returns (ShowMetricsResponse);
+  rpc Update(UpdateMetricsRequest) returns (UpdateMetricsResponse);
+}

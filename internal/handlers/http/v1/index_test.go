@@ -1,4 +1,4 @@
-package handlers
+package v1
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
+	"github.com/ilya372317/must-have-metrics/internal/service"
 	"github.com/ilya372317/must-have-metrics/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,7 +86,8 @@ func TestIndexHandler(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, "localhost:8080/", nil)
 			require.NoError(t, err)
 			writer := httptest.NewRecorder()
-			handlerToTest := IndexHandler(strg)
+			serv := service.NewMetricsService(strg, serverConfig)
+			handlerToTest := IndexHandler(serv)
 			handlerToTest.ServeHTTP(writer, request)
 
 			res := writer.Result()

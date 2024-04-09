@@ -1,4 +1,4 @@
-package handlers
+package v1
 
 import (
 	"context"
@@ -9,20 +9,14 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/dto"
 	"github.com/ilya372317/must-have-metrics/internal/logger"
 	"github.com/ilya372317/must-have-metrics/internal/server/entity"
-	"github.com/ilya372317/must-have-metrics/internal/server/service"
 )
 
-type bulkUpdateStorage interface {
-	GetByIDs(ctx context.Context, ids []string) ([]entity.Alert, error)
-	BulkInsertOrUpdate(ctx context.Context, alerts []entity.Alert) error
-	Get(ctx context.Context, name string) (entity.Alert, error)
-	Has(ctx context.Context, name string) (bool, error)
-	Save(ctx context.Context, name string, alert entity.Alert) error
-	Update(ctx context.Context, name string, alert entity.Alert) error
+type bulkUpdateService interface {
+	BulkAddAlerts(context.Context, []dto.Metrics) ([]entity.Alert, error)
 }
 
 // BulkUpdate allow to update multiply metrics by request in json format.
-func BulkUpdate(storage bulkUpdateStorage) http.HandlerFunc {
+func BulkUpdate(service bulkUpdateService) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("content-type", "application/json")
 		metricsList, err := dto.NewMetricsListDTOFromRequest(request)
@@ -38,7 +32,7 @@ func BulkUpdate(storage bulkUpdateStorage) http.HandlerFunc {
 			}
 		}
 
-		alerts, err := service.BulkAddAlerts(request.Context(), storage, metricsList)
+		alerts, err := service.BulkAddAlerts(request.Context(), metricsList)
 
 		if err != nil {
 			http.Error(writer, fmt.Sprintf("failed insert metrics: %v", err), http.StatusInternalServerError)

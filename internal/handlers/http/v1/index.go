@@ -1,4 +1,4 @@
-package handlers
+package v1
 
 import (
 	"context"
@@ -11,15 +11,15 @@ import (
 	"github.com/ilya372317/must-have-metrics/internal/utils"
 )
 
-type indexStorage interface {
-	All(ctx context.Context) ([]entity.Alert, error)
+type indexService interface {
+	GetAll(ctx context.Context) ([]entity.Alert, error)
 }
 
 // IndexHandler give list of stored metrics in html format.
-func IndexHandler(strg indexStorage) http.HandlerFunc {
+func IndexHandler(service indexService) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "text/html")
-		allAlerts, err := strg.All(request.Context())
+		allAlerts, err := service.GetAll(request.Context())
 		if err != nil {
 			http.Error(writer,
 				fmt.Sprintf("failed get data from storage: %v", err), http.StatusInternalServerError)
